@@ -2,189 +2,21 @@
 
 Курсовий проєкт за варіантом №26: **Система управління кадровим резервом (HR-система)**.
 
-## Опис
-
-HRReserveSystem - це ASP.NET Core MVC веб-застосунок для рекрутерів, адміністраторів та інтерв'юерів. Система допомагає вести базу кандидатів, резюме, вакансій, заявок, співбесід, відгуків інтерв'юерів та оцінок soft skills.
-
-Проблема, яку вирішує система: рекрутеру потрібно бачити історію взаємодії з кандидатом, етап відбору, статус вакансії, результати співбесід і якість soft skills в одному місці.
+HRReserveSystem - це ASP.NET Core MVC застосунок для рекрутерів, адміністраторів та інтерв'юерів. Система веде базу кандидатів, резюме, вакансій, заявок на вакансії, співбесід, відгуків інтерв'юерів і оцінок soft skills.
 
 ## Стек технологій
 
 - .NET 8
-- ASP.NET Core MVC
-- Razor Views
+- ASP.NET Core MVC і Razor Views
+- ASP.NET Core Identity з cookie authentication
 - Entity Framework Core 8
 - SQLite
-- Bootstrap
-- ASP.NET Core Identity з cookie authentication
+- Bootstrap, jQuery validation
+- xUnit integration tests
 
-У проєкті не використовуються .NET 10 пакети, `MapStaticAssets()` і `WithStaticAssets()`. У `Program.cs` використовується `app.UseStaticFiles()`.
+Проєкт залишається MVC-застосунком. Angular, React і Clean Architecture не використовуються.
 
-## Авторизація
-
-Користувачі предметної області зберігаються в таблиці `Recruiters`, а вхід у систему виконується через ASP.NET Core Identity. Під час seed/demo-ініціалізації для рекрутерів створюються Identity-користувачі, ролі `Admin`, `Recruiter`, `Interviewer` і хешовані паролі.
-
-Поле `Recruiters.Password` залишене для навчальної демонстрації та швидкого заповнення тестових акаунтів на сторінці Login. Для фактичного входу використовується Identity password hash у таблицях `AspNetUsers`.
-
-Тестові користувачі:
-
-| Login | Password | Role |
-| --- | --- | --- |
-| `admin` | `admin123` | Admin |
-| `recruiter` | `recruiter123` | Recruiter |
-| `interviewer` | `interviewer123` | Interviewer |
-
-Публічна реєстрація не передбачена. Користувачів створює адміністратор через розділ **«Рекрутери»**. На сторінці Login немає кнопки створення акаунта.
-
-Права доступу:
-
-- Admin: повний доступ до всіх сторінок.
-- Recruiter: Candidates, Vacancies, Applications, Interviews.
-- Interviewer: Interviews, InterviewFeedbacks, SoftSkillAssessments.
-- Неавторизований користувач: Login і About; CRUD-сторінки захищені через `[Authorize]`.
-
-## Можливості
-
-- Dashboard з кількістю кандидатів, вакансій, заявок, співбесід, рекрутерів, прийнятих і відхилених кандидатів.
-- Останні 5 кандидатів, останні 5 вакансій, найближчі співбесіди.
-- CRUD для Candidates, Vacancies, Applications, Interviews, InterviewFeedbacks, SoftSkillAssessments, Recruiters.
-- Пошук кандидатів за ПІБ, email і навичками.
-- Фільтр кандидатів за мінімальним досвідом.
-- Завантаження файлу резюме кандидата у форматах PDF, DOC або DOCX до 5 MB.
-- Експорт кандидатів у Excel/CSV із урахуванням поточного пошуку та фільтра досвіду.
-- Пошук вакансій за назвою та фільтр за статусом.
-- Фільтр заявок за етапом відбору.
-- Коментар рекрутера до заявки: причина статусу або наступний крок відбору.
-- Фільтр співбесід за типом і результатом.
-- Календар співбесід за датами з кандидатами, вакансіями, типом, результатом і відповідальним рекрутером.
-- Пряме відкриття співбесіди в Google Calendar та експорт у `.ics` файл для Google Calendar або Outlook Calendar.
-- Email-сповіщення при створенні або оновленні співбесіди. Якщо SMTP не налаштований, повідомлення зберігаються у локальній папці `EmailOutbox`.
-- Відображення середнього soft skills score на Dashboard, у списку оцінок і в деталях кандидата.
-- Bootstrap UI: cards, badges, читабельні таблиці, однакові кнопки, empty states.
-- Фінальний UI-pass: посилено контраст таблиць і статусів, `warning`/`info` badges мають темний текст, Soft Skills показує оцінки через читабельні score badges.
-- Світла й темна тема інтерфейсу з перемикачем у navbar; вибір теми зберігається в `localStorage`.
-- Покращений HR dashboard: м'які тіні, акуратні cards, адаптивні таблиці, контрастні badges і єдиний стиль форм.
-- Desktop layout із лівим sidebar, активним пунктом меню, профілем користувача та швидким Logout.
-- Mobile-friendly layout: верхня панель, bottom navigation для основних розділів і offcanvas-меню "Ще".
-- Dashboard містить KPI-карти, останніх кандидатів, останні вакансії, найближчі співбесіди, статистику заявок і вакансій за статусами.
-
-## Структура проєкту
-
-- `Models/` - сутності предметної області.
-- `Data/ApplicationDbContext.cs` - EF Core контекст.
-- `Data/SeedData.cs` - демо-дані та нормалізація старих записів.
-- `Controllers/` - MVC контролери.
-- `Views/` - Razor Views.
-- `ViewModels/` - моделі для Login і Dashboard.
-- `Services/DemoUserService.cs` - список demo-користувачів для сторінки Login.
-- `Services/IdentityRecruiterSyncService.cs` - синхронізація `Recruiters` з ASP.NET Identity.
-- `Services/EmailNotificationService.cs` - SMTP або локальний outbox для email-сповіщень.
-- `Migrations/` - міграції SQLite.
-- `Docs/CourseMaterials.md` - матеріали для захисту: ER, Use Case, MVC, таблиці, інструкція.
-- `wwwroot/` - Bootstrap, CSS, JS.
-
-## Структура БД
-
-### Candidates
-
-- `Id`
-- `FullName`
-- `Email`
-- `Phone`
-- `Skills`
-- `ExperienceYears`
-- `ResumeFilePath`
-- `ResumeSummary`
-- `CreatedAt`
-
-### Vacancies
-
-- `Id`
-- `Title`
-- `Description`
-- `Requirements`
-- `SalaryMin`
-- `SalaryMax`
-- `Status`: `Open`, `Paused`, `Closed`
-- `CreatedAt`
-
-### Applications
-
-- `Id`
-- `CandidateId`
-- `VacancyId`
-- `Status`: `New`, `Screening`, `Interview`, `TestTask`, `Offer`, `Hired`, `Rejected`
-- `RecruiterComment`
-- `AppliedAt`
-
-### Interviews
-
-- `Id`
-- `ApplicationId`
-- `RecruiterId`
-- `InterviewDate`
-- `InterviewType`: `HR`, `Technical`, `Final`
-- `Result`: `Pending`, `Passed`, `Failed`
-- `Notes`
-
-### InterviewFeedbacks
-
-- `Id`
-- `InterviewId`
-- `RecruiterId`
-- `Comment`
-- `Score`
-- `Recommendation`: `Hire`, `Maybe`, `Reject`
-- `CreatedAt`
-
-### SoftSkillAssessments
-
-- `Id`
-- `CandidateId`
-- `Communication`
-- `Teamwork`
-- `Responsibility`
-- `StressResistance`
-- `Leadership`
-- `OverallComment`
-
-Оцінки soft skills мають валідацію від 1 до 10. У views показується середній бал.
-
-### Recruiters
-
-- `Id`
-- `FullName`
-- `Email`
-- `Login`
-- `Password`
-- `Role`: `Admin`, `Recruiter`, `Interviewer`
-- `CreatedAt`
-
-## Зв'язки
-
-- Candidate має багато Applications.
-- Vacancy має багато Applications.
-- Application має Candidate, Vacancy і багато Interviews.
-- Interview має Application, Recruiter і багато Feedbacks.
-- InterviewFeedback має Interview і Recruiter.
-- SoftSkillAssessment має Candidate.
-- Recruiter має Interviews і InterviewFeedbacks.
-
-## Seed data
-
-Якщо HR-таблиці порожні, система додає:
-
-- 3 рекрутери;
-- 5 кандидатів;
-- 3 вакансії;
-- 5 заявок;
-- 3 співбесіди;
-- 3 відгуки;
-- 3 оцінки soft skills.
-
-Якщо база вже містить HR-дані, seed не дублює записи, а тільки гарантує наявність demo-користувачів і нормалізує старі статуси до актуальних значень.
-
-## Запуск
+## Запуск проєкту
 
 ```bash
 dotnet restore
@@ -192,107 +24,127 @@ dotnet build
 dotnet run
 ```
 
-Після запуску відкрийте URL з консолі, зазвичай `http://localhost:5000` або порт із `launchSettings.json`.
+Після запуску відкрийте URL з консолі, зазвичай `http://localhost:5000` або адресу з `Properties/launchSettings.json`.
 
-SQLite база створюється автоматично. У `Program.cs` виконується `Database.Migrate()`, тому міграції застосовуються під час запуску.
+SQLite база створюється автоматично. У `Program.cs` виконується `Database.Migrate()`, тому міграції застосовуються під час старту застосунку.
 
-## Email-сповіщення
-
-Після створення або оновлення співбесіди система формує email для кандидата і призначеного рекрутера.
-
-За замовчуванням реальна відправка вимкнена:
-
-```json
-"Email": {
-  "Enabled": false,
-  "Host": "",
-  "Port": 587,
-  "UseSsl": true,
-  "UserName": "",
-  "Password": "",
-  "FromEmail": "no-reply@hrreserve.local",
-  "FromName": "HR Reserve System",
-  "OutboxPath": "EmailOutbox",
-  "RedirectAllTo": ""
-}
-```
-
-У такому режимі повідомлення не приходять на пошту, а зберігаються як `.txt` файли у папці `EmailOutbox`. Це зручно для демонстрації без паролів від поштового сервісу.
-
-Щоб листи реально приходили, потрібно вказати SMTP-дані у `appsettings.json` або user secrets: `Enabled=true`, `Host`, `Port`, `UserName`, `Password`, `FromEmail`. Для Gmail зазвичай потрібен App Password, а не звичайний пароль акаунта.
-
-Для захисту зручно заповнити `RedirectAllTo` своєю поштою. Тоді всі demo-сповіщення прийдуть на одну адресу, навіть якщо в кандидатів або рекрутерів записані навчальні email.
-
-Безпечний спосіб налаштувати SMTP локально - через user secrets, щоб пароль не потрапив у Git:
-
-```bash
-dotnet user-secrets init
-dotnet user-secrets set "Email:Enabled" "true"
-dotnet user-secrets set "Email:Host" "smtp.gmail.com"
-dotnet user-secrets set "Email:Port" "587"
-dotnet user-secrets set "Email:UseSsl" "true"
-dotnet user-secrets set "Email:UserName" "your-email@gmail.com"
-dotnet user-secrets set "Email:Password" "your-app-password"
-dotnet user-secrets set "Email:FromEmail" "your-email@gmail.com"
-dotnet user-secrets set "Email:RedirectAllTo" "your-email@gmail.com"
-```
-
-Для Gmail значення `Email:Password` має бути саме App Password. Після цього перезапустіть `dotnet run` і створіть або оновіть співбесіду.
-
-## Команди міграцій
+## Міграції
 
 ```bash
 dotnet ef migrations add НазваМіграції
 dotnet ef database update
-dotnet ef migrations remove
 ```
 
-## Як перевірити систему
+Для фінального hardening-етапу використовується міграція `HardeningConstraints`.
+
+## Ролі та доступи
+
+| Роль | Доступ |
+| --- | --- |
+| `Admin` | Повний доступ до кандидатів, вакансій, заявок, співбесід, відгуків, soft skills і користувачів-рекрутерів. |
+| `Recruiter` | Кандидати, вакансії, заявки, співбесіди. |
+| `Interviewer` | Співбесіди, відгуки інтерв'юерів, оцінки soft skills. |
+
+CRUD-сторінки захищені атрибутами `[Authorize]`. Неавторизований користувач може відкрити сторінку входу та інформаційні сторінки.
+
+## Демо-акаунти
+
+| Login | Password | Role |
+| --- | --- | --- |
+| `admin` | `admin123` | Admin |
+| `recruiter` | `recruiter123` | Recruiter |
+| `interviewer` | `interviewer123` | Interviewer |
+
+У предметній таблиці `Recruiters` зберігається `PasswordHash`, а не відкритий пароль. Вхід перевіряє пароль через `PasswordHasher<Recruiter>.VerifyHashedPassword`, після чого користувач підписується через ASP.NET Core Identity, щоб зберегти ролі та claims.
+
+## Реалізовані модулі
+
+- Dashboard з основними HR-показниками.
+- Кандидати: база кандидатів, пошук, фільтр за досвідом, CSV-експорт, перегляд деталей.
+- Резюме: локальне завантаження PDF/DOC/DOCX до 5 MB, безпечна назва файлу через `Guid`, шлях у `ResumeFilePath`, відкриття резюме зі сторінки кандидата.
+- Вакансії: опис, вимоги, зарплатний діапазон, статуси `Open`, `Paused`, `Closed`.
+- Заявки: зв'язок кандидат-вакансія, етапи відбору `New`, `Screening`, `Interview`, `TestTask`, `Offer`, `Hired`, `Rejected`.
+- Співбесіди: дата, тип, результат, відповідальний рекрутер, календар, `.ics` export і перехід до Google Calendar.
+- Відгуки інтерв'юерів: коментар, рекомендація, оцінка від 1 до 10.
+- Soft skills: оцінки комунікації, командної роботи, відповідальності, стресостійкості та лідерства від 1 до 10.
+- Рекрутери: адміністрування користувачів і ролей `Admin`, `Recruiter`, `Interviewer`.
+- REST API як додатковий шар до MVC: `/api/candidates`, `/api/vacancies`, `/api/applications`, `/api/interviews`, `/api/soft-skills`.
+
+## Відповідність варіанту №26
+
+| Вимога | Реалізація |
+| --- | --- |
+| База кандидатів | `CandidatesController`, модель `Candidate`, таблиця `Candidates`. |
+| База резюме | `ResumeFilePath`, upload PDF/DOC/DOCX, перегляд резюме в Details. |
+| Вакансії | `VacanciesController`, модель `Vacancy`, статуси вакансій. |
+| Етапи відбору | `ApplicationsController`, статус заявки як етап pipeline. |
+| Історія співбесід | `InterviewsController`, зв'язок зі заявками. |
+| Відгуки інтерв'юерів | `InterviewFeedbacksController`, оцінка і рекомендація. |
+| Оцінка soft skills | `SoftSkillAssessmentsController`, 5 оцінок і середній бал. |
+| Статуси вакансій | `Open`, `Paused`, `Closed` із валідацією і DB constraint. |
+| Ролі | `Admin`, `Recruiter`, `Interviewer` через ASP.NET Core Identity. |
+
+## Посилення даних і безпеки
+
+- Паролі рекрутерів зберігаються як хеші.
+- Logout виконується тільки через POST із `[ValidateAntiForgeryToken]`.
+- У БД додано унікальні індекси для email/login і пари `CandidateId + VacancyId`.
+- У БД додано check constraints для статусів, оцінок 1-10 і `SalaryMax >= SalaryMin`.
+- Для кандидатів використовується soft delete через `IsDeleted`.
+- Для вакансій використовується архівація через `IsArchived`.
+- Архівні записи приховуються зі списків за замовчуванням.
+- Форми мають `ValidationSummary`, `asp-validation-for` і зрозумілі українські повідомлення.
+
+SQLite у цьому проєкті зберігає `decimal` зарплати як `TEXT`, що є типовим компромісом EF Core для SQLite. Constraint для зарплати використовує числове приведення, але для production краще зберігати зарплату як integer у копійках/центах.
+
+## Seed data
+
+Якщо HR-таблиці порожні, система додає:
+
+- 3 демо-користувачі;
+- 5 кандидатів;
+- 3 вакансії;
+- 5 заявок;
+- 3 співбесіди;
+- 3 відгуки;
+- 3 оцінки soft skills.
+
+Якщо база вже містить HR-дані, seed не дублює записи, а нормалізує старі статуси та гарантує наявність демо-користувачів.
+
+## Тести та CI
+
+Локальна перевірка:
+
+```bash
+dotnet clean
+dotnet restore
+dotnet build
+dotnet test
+```
+
+GitHub Actions workflow `.github/workflows/ci.yml` виконує:
+
+- `dotnet restore`
+- `dotnet build --configuration Release`
+- `dotnet test --configuration Release`
+
+## Ручна перевірка
 
 1. Відкрити `/Account/Login`.
-2. Увійти як `admin / admin123`.
-3. Перевірити Dashboard: `/`.
-4. Перевірити перемикач світлої/темної теми. Обрана тема зберігається в `localStorage` і не скидається після оновлення сторінки.
-5. Відкрити основні сторінки:
-   - `/Candidates`
-   - `/Vacancies`
-   - `/Applications`
-   - `/Interviews`
-   - `/InterviewFeedbacks`
-   - `/SoftSkillAssessments`
-   - `/Recruiters`
-   - `/Home/About`
-6. Для кожної сутності перевірити Index, Create, Edit, Details, Delete.
-7. У розділі `/Candidates` перевірити пошук, фільтр за досвідом і кнопку експорту в Excel/CSV.
-8. На desktop перевірити sidebar, на mobile - bottom navigation і offcanvas-меню.
-9. Увійти як `recruiter` і перевірити, що Feedbacks, Soft Skills і Recruiters недоступні.
-10. Увійти як `interviewer` і перевірити доступ тільки до Interviews, Feedbacks і Soft Skills.
-
-## Реалізовано за варіантом №26
-
-- База кандидатів.
-- База резюме через `ResumeFilePath`, `ResumeSummary` і завантаження файлів PDF/DOC/DOCX.
-- Експорт бази кандидатів у Excel/CSV.
-- Вакансії зі статусами.
-- Заявки як етапи відбору з коментарем рекрутера.
-- Історія співбесід.
-- Календар співбесід, пряме відкриття події в Google Calendar та `.ics` export для імпорту в календар.
-- Email-сповіщення про створення та оновлення співбесід.
-- Відгуки інтерв'юерів.
-- Оцінка soft skills.
-- Таблиця рекрутерів і ролі користувачів.
-- Dashboard для рекрутера.
+2. Увійти як `admin / admin123`, перевірити Dashboard і розділ `Recruiters`.
+3. Вийти через кнопку `Вийти`; logout має відправити POST-форму.
+4. Увійти як `recruiter / recruiter123`, перевірити доступ до кандидатів, вакансій, заявок і співбесід.
+5. Переконатися, що `Recruiter` не має доступу до `/Recruiters`.
+6. Увійти як `interviewer / interviewer123`, перевірити доступ до співбесід, відгуків і soft skills.
+7. Переконатися, що `Interviewer` не має доступу до `/Candidates`.
+8. Створити кандидата з PDF/DOC/DOCX резюме до 5 MB.
+9. Спробувати завантажити `.exe` як резюме і перевірити повідомлення про неправильний формат.
+10. Створити вакансію і перевірити, що `SalaryMax < SalaryMin` не проходить.
+11. Створити заявку кандидат-вакансія і перевірити, що дубльована пара не проходить.
+12. Створити співбесіду, feedback і soft skills; оцінки поза діапазоном 1-10 мають блокуватися.
 
 ## Відомі обмеження
 
-- Авторизація використовує ASP.NET Identity і хешовані паролі. Поле `Recruiters.Password` залишене як навчальне/demo-поле для швидкого показу тестових акаунтів.
-- Публічна реєстрація не передбачена: користувачів створює адміністратор системи через розділ «Рекрутери».
-- Завантаження резюме реалізовано як локальне збереження файлів у `wwwroot/uploads/resumes`; хмарне сховище не використовується.
-- Email-сповіщення потребують SMTP-конфігурації для реальної відправки. Без SMTP вони зберігаються в `EmailOutbox` для демонстрації.
-- Немає reset password і самостійної реєстрації користувачів.
-
-## Що можна додати в майбутньому
-
-- Reset password, підтвердження email та самостійну реєстрацію користувачів.
-- OAuth/API-синхронізацію з Google Calendar або Outlook Calendar без ручного підтвердження події.
-- Розширену аналітику soft skills і pipeline-воронку.
+- Файли резюме зберігаються локально у `wwwroot/uploads/resumes`; хмарне сховище не використовується.
+- Email-сповіщення потребують SMTP-конфігурації. Без SMTP вони записуються у `EmailOutbox`.
+- Публічна реєстрація, reset password і підтвердження email не реалізовані.
