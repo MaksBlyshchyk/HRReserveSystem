@@ -35,7 +35,6 @@
     </div>
     <div class="col-12">
         <label asp-for="ResumeFilePath" class="form-label"></label>
-        <input asp-for="ResumeFilePath" type="hidden" />
         <input class="form-control" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx" />
         <div class="form-text">Можна завантажити PDF, DOC або DOCX файл резюме до 5 MB.</div>
         <span asp-validation-for="ResumeFilePath" class="text-danger"></span>

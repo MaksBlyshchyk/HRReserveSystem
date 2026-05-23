@@ -91,7 +91,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
         if (!candidate.ResumeFilePath.StartsWith("/uploads/resumes/", StringComparison.OrdinalIgnoreCase))
         {
-            return Redirect(candidate.ResumeFilePath);
+            return NotFound();
         }
 
         var fileName = Path.GetFileName(candidate.ResumeFilePath);
@@ -111,7 +111,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("FullName,Email,Phone,Skills,ResumeFilePath,ResumeSummary,ExperienceYears")] Candidate candidate, IFormFile? resumeFile)
+    public async Task<IActionResult> Create([Bind("FullName,Email,Phone,Skills,ResumeSummary,ExperienceYears")] Candidate candidate, IFormFile? resumeFile)
     {
         ValidateResumeFile(resumeFile);
 
@@ -188,9 +188,15 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Email,Phone,Skills,ResumeFilePath,ResumeSummary,ExperienceYears,CreatedAt")] Candidate candidate, IFormFile? resumeFile, bool removeResume = false)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Email,Phone,Skills,ResumeSummary,ExperienceYears")] Candidate candidate, IFormFile? resumeFile, bool removeResume = false)
     {
         if (id != candidate.Id)
+        {
+            return NotFound();
+        }
+
+        var existingCandidate = await context.Candidates.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
+        if (existingCandidate is null)
         {
             return NotFound();
         }
@@ -199,37 +205,43 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
         if (!ModelState.IsValid)
         {
+            candidate.ResumeFilePath = existingCandidate.ResumeFilePath;
+            candidate.CreatedAt = existingCandidate.CreatedAt;
             return View(candidate);
         }
 
         if (await CandidateEmailExists(candidate.Email, candidate.Id))
         {
             ModelState.AddModelError(nameof(Candidate.Email), "Кандидат із такою електронною поштою вже існує.");
+            candidate.ResumeFilePath = existingCandidate.ResumeFilePath;
+            candidate.CreatedAt = existingCandidate.CreatedAt;
             return View(candidate);
         }
 
         try
         {
-            var oldResumePath = await context.Candidates
-                .AsNoTracking()
-                .Where(item => item.Id == id && !item.IsDeleted)
-                .Select(item => item.ResumeFilePath)
-                .FirstOrDefaultAsync();
+            var oldResumePath = existingCandidate.ResumeFilePath;
+
+            existingCandidate.FullName = candidate.FullName;
+            existingCandidate.Email = candidate.Email;
+            existingCandidate.Phone = candidate.Phone;
+            existingCandidate.Skills = candidate.Skills;
+            existingCandidate.ResumeSummary = candidate.ResumeSummary;
+            existingCandidate.ExperienceYears = candidate.ExperienceYears;
 
             if (removeResume)
             {
                 DeleteStoredResume(oldResumePath);
-                candidate.ResumeFilePath = null;
+                existingCandidate.ResumeFilePath = null;
             }
 
             var uploadedResumePath = await SaveResumeFileAsync(resumeFile);
             if (!string.IsNullOrWhiteSpace(uploadedResumePath))
             {
                 DeleteStoredResume(oldResumePath);
-                candidate.ResumeFilePath = uploadedResumePath;
+                existingCandidate.ResumeFilePath = uploadedResumePath;
             }
 
-            context.Update(candidate);
             await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)

@@ -4,11 +4,11 @@ namespace HRReserveSystem.ViewModels;
 
 public class LoginViewModel
 {
-    [Required]
+    [Required(ErrorMessage = "Вкажіть логін або email.")]
     [Display(Name = "Логін або email")]
     public string Login { get; set; } = string.Empty;
 
-    [Required]
+    [Required(ErrorMessage = "Вкажіть пароль.")]
     [DataType(DataType.Password)]
     [Display(Name = "Пароль")]
     public string Password { get; set; } = string.Empty;

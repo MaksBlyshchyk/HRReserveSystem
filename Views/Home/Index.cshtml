@@ -75,36 +75,39 @@
 </div>
 
 <div class="dashboard-kpi-grid mb-4">
-    <a class="card dashboard-card dashboard-card-link" href="@candidatesUrl" aria-disabled="@(candidatesUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg></span>
-                <span class="text-muted small text-uppercase">Кандидати</span>
+    @if (canOpenHiringPages)
+    {
+        <a class="card dashboard-card dashboard-card-link" href="@candidatesUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-blue" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg></span>
+                    <span class="text-muted small text-uppercase">Кандидати</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.CandidateCount</div>
+                <div class="metric-delta text-success">↗ +12 цього тижня</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.CandidateCount</div>
-            <div class="metric-delta text-success">↗ +12 цього тижня</div>
-        </div>
-    </a>
-    <a class="card dashboard-card dashboard-card-link" href="@vacanciesUrl" aria-disabled="@(vacanciesUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0h12v12H4V7h4Z" /></svg></span>
-                <span class="text-muted small text-uppercase">Вакансії</span>
+        </a>
+        <a class="card dashboard-card dashboard-card-link" href="@vacanciesUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0h12v12H4V7h4Z" /></svg></span>
+                    <span class="text-muted small text-uppercase">Вакансії</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.VacancyCount</div>
+                <div class="metric-delta text-primary">↗ +3 цього тижня</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.VacancyCount</div>
-            <div class="metric-delta text-primary">↗ +3 цього тижня</div>
-        </div>
-    </a>
-    <a class="card dashboard-card dashboard-card-link" href="@applicationsUrl" aria-disabled="@(applicationsUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M9 13h6M9 17h6" /></svg></span>
-                <span class="text-muted small text-uppercase">Заявки</span>
+        </a>
+        <a class="card dashboard-card dashboard-card-link" href="@applicationsUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-amber" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M9 13h6M9 17h6" /></svg></span>
+                    <span class="text-muted small text-uppercase">Заявки</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.ApplicationCount</div>
+                <div class="metric-delta text-success">↗ +23 цього тижня</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.ApplicationCount</div>
-            <div class="metric-delta text-success">↗ +23 цього тижня</div>
-        </div>
-    </a>
+        </a>
+    }
     <a class="card dashboard-card dashboard-card-link" href="@interviewsUrl">
         <div class="card-body">
             <div class="dashboard-card-head">
@@ -115,109 +118,118 @@
             <div class="metric-delta text-success">↗ +5 цього тижня</div>
         </div>
     </a>
-    <a class="card dashboard-card dashboard-card-link" href="@softSkillsUrl" aria-disabled="@(softSkillsUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6-5.4-2.9-5.4 2.9 1-6-4.4-4.3 6.1-.9z" /></svg></span>
-                <span class="text-muted small text-uppercase">Soft skills</span>
+    @if (canOpenInterviewPages)
+    {
+        <a class="card dashboard-card dashboard-card-link" href="@softSkillsUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6-5.4-2.9-5.4 2.9 1-6-4.4-4.3 6.1-.9z" /></svg></span>
+                    <span class="text-muted small text-uppercase">Soft skills</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.AverageSoftSkillScore</div>
+                <div class="metric-delta text-muted">Середній бал / 10</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.AverageSoftSkillScore</div>
-            <div class="metric-delta text-muted">Середній бал / 10</div>
-        </div>
-    </a>
-    <a class="card dashboard-card dashboard-card-link" href="@recruitersUrl" aria-disabled="@(recruitersUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6-1a3 3 0 1 0 0-6M3 20a6 6 0 0 1 12 0m3 0a6 6 0 0 0-3-5.2" /></svg></span>
-                <span class="text-muted small text-uppercase">Рекрутери</span>
+        </a>
+    }
+    @if (isAdmin)
+    {
+        <a class="card dashboard-card dashboard-card-link" href="@recruitersUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-violet" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6-1a3 3 0 1 0 0-6M3 20a6 6 0 0 1 12 0m3 0a6 6 0 0 0-3-5.2" /></svg></span>
+                    <span class="text-muted small text-uppercase">Рекрутери</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.RecruiterCount</div>
+                <div class="metric-delta text-muted">Активні</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.RecruiterCount</div>
-            <div class="metric-delta text-muted">Активні</div>
-        </div>
-    </a>
-    <a class="card dashboard-card dashboard-card-link" href="@acceptedUrl" aria-disabled="@(acceptedUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg></span>
-                <span class="text-muted small text-uppercase">Прийняті</span>
+        </a>
+    }
+    @if (canOpenHiringPages)
+    {
+        <a class="card dashboard-card dashboard-card-link" href="@acceptedUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg></span>
+                    <span class="text-muted small text-uppercase">Прийняті</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.AcceptedCandidateCount</div>
+                <div class="metric-delta text-success">↗ +3 цього тижня</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.AcceptedCandidateCount</div>
-            <div class="metric-delta text-success">↗ +3 цього тижня</div>
-        </div>
-    </a>
-    <a class="card dashboard-card dashboard-card-link" href="@rejectedUrl" aria-disabled="@(rejectedUrl is null ? "true" : null)">
-        <div class="card-body">
-            <div class="dashboard-card-head">
-                <span class="dashboard-icon dashboard-icon-danger" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg></span>
-                <span class="text-muted small text-uppercase">Відхилені</span>
+        </a>
+        <a class="card dashboard-card dashboard-card-link" href="@rejectedUrl">
+            <div class="card-body">
+                <div class="dashboard-card-head">
+                    <span class="dashboard-icon dashboard-icon-danger" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg></span>
+                    <span class="text-muted small text-uppercase">Відхилені</span>
+                </div>
+                <div class="display-6 fw-semibold">@Model.RejectedCandidateCount</div>
+                <div class="metric-delta text-primary">↗ +4 цього тижня</div>
             </div>
-            <div class="display-6 fw-semibold">@Model.RejectedCandidateCount</div>
-            <div class="metric-delta text-primary">↗ +4 цього тижня</div>
-        </div>
-    </a>
+        </a>
+    }
 </div>
 
 <div class="dashboard-bento-grid">
-    <section class="card bento-card bento-card-wide">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Заявки за статусами</h2>
-            <a class="btn btn-sm btn-link" asp-controller="Applications" asp-action="Index">Усі</a>
-        </div>
-        <div class="card-body bento-chart-body">
-            <div class="donut-chart" style="--donut-gradient: @BuildDonutGradient(Model.ApplicationStatusCounts, HrOptions.ApplicationStatuses, applicationColors)">
-                <span>@Model.ApplicationCount</span>
+    @if (canOpenHiringPages)
+    {
+        <section class="card bento-card bento-card-wide">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Заявки за статусами</h2>
+                <a class="btn btn-sm btn-link" asp-controller="Applications" asp-action="Index">Усі</a>
             </div>
-            <div class="status-legend">
-                @foreach (var status in HrOptions.ApplicationStatuses)
-                {
-                    var count = Model.ApplicationStatusCounts.TryGetValue(status, out var value) ? value : 0;
-                    if (count == 0)
+            <div class="card-body bento-chart-body">
+                <div class="donut-chart" style="--donut-gradient: @BuildDonutGradient(Model.ApplicationStatusCounts, HrOptions.ApplicationStatuses, applicationColors)">
+                    <span>@Model.ApplicationCount</span>
+                </div>
+                <div class="status-legend">
+                    @foreach (var status in HrOptions.ApplicationStatuses)
                     {
-                        continue;
-                    }
-                    var percent = (int)Math.Round(count * 100.0 / applicationTotal);
+                        var count = Model.ApplicationStatusCounts.TryGetValue(status, out var value) ? value : 0;
+                        if (count == 0)
+                        {
+                            continue;
+                        }
+                        var percent = (int)Math.Round(count * 100.0 / applicationTotal);
 
-                    <div class="status-legend-row">
-                        <span class="legend-dot" style="background:@applicationColors[status]"></span>
-                        <span>@status</span>
-                        <strong>@count (@percent%)</strong>
-                    </div>
-                }
-            </div>
-        </div>
-    </section>
-
-    <section class="card bento-card">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Останні кандидати</h2>
-            @if (User.IsInRole("Admin") || User.IsInRole("Recruiter"))
-            {
-                <a class="btn btn-sm btn-link" asp-controller="Candidates" asp-action="Index">Усі</a>
-            }
-        </div>
-        <div class="card-body">
-            @if (Model.RecentCandidates.Any())
-            {
-                <div class="stack-list">
-                    @foreach (var candidate in Model.RecentCandidates.Take(3))
-                    {
-                        <a class="stack-list-item" asp-controller="Candidates" asp-action="Details" asp-route-id="@candidate.Id">
-                            <span class="candidate-avatar">@candidate.FullName.Trim()[0]</span>
-                            <span class="min-w-0">
-                                <strong>@candidate.FullName</strong>
-                                <small>@candidate.Email</small>
-                            </span>
-                            <span class="badge text-bg-info text-dark">@candidate.ExperienceYears р. досвіду</span>
-                        </a>
+                        <div class="status-legend-row">
+                            <span class="legend-dot" style="background:@applicationColors[status]"></span>
+                            <span>@status</span>
+                            <strong>@count (@percent%)</strong>
+                        </div>
                     }
                 </div>
-            }
-            else
-            {
-                <div class="empty-state">Кандидатів ще немає.</div>
-            }
-        </div>
-    </section>
+            </div>
+        </section>
+
+        <section class="card bento-card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Останні кандидати</h2>
+                <a class="btn btn-sm btn-link" asp-controller="Candidates" asp-action="Index">Усі</a>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentCandidates.Any())
+                {
+                    <div class="stack-list">
+                        @foreach (var candidate in Model.RecentCandidates.Take(3))
+                        {
+                            <a class="stack-list-item" asp-controller="Candidates" asp-action="Details" asp-route-id="@candidate.Id">
+                                <span class="candidate-avatar">@candidate.FullName.Trim()[0]</span>
+                                <span class="min-w-0">
+                                    <strong>@candidate.FullName</strong>
+                                    <small>@candidate.Email</small>
+                                </span>
+                                <span class="badge text-bg-info text-dark">@candidate.ExperienceYears р. досвіду</span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">Кандидатів ще немає.</div>
+                }
+            </div>
+        </section>
+    }
 
     <section class="card bento-card">
         <div class="card-header">
@@ -251,60 +263,60 @@
         </div>
     </section>
 
-    <section class="card bento-card">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Вакансії за статусами</h2>
-            <a class="btn btn-sm btn-link" asp-controller="Vacancies" asp-action="Index">Усі</a>
-        </div>
-        <div class="card-body bento-chart-body">
-            <div class="donut-chart donut-chart-small" style="--donut-gradient: @BuildDonutGradient(Model.VacancyStatusCounts, HrOptions.VacancyStatuses, vacancyColors)">
-                <span>@Model.VacancyCount</span>
-            </div>
-            <div class="status-legend">
-                @foreach (var status in HrOptions.VacancyStatuses)
-                {
-                    var count = Model.VacancyStatusCounts.TryGetValue(status, out var value) ? value : 0;
-                    var percent = (int)Math.Round(count * 100.0 / vacancyTotal);
-
-                    <div class="status-legend-row">
-                        <span class="legend-dot" style="background:@vacancyColors[status]"></span>
-                        <span>@status</span>
-                        <strong>@count (@percent%)</strong>
-                    </div>
-                }
-            </div>
-        </div>
-    </section>
-
-    <section class="card bento-card bento-card-vacancies">
-        <div class="card-header">
-            <h2 class="h5 mb-0">Останні вакансії</h2>
-            @if (User.IsInRole("Admin") || User.IsInRole("Recruiter"))
-            {
+    @if (canOpenHiringPages)
+    {
+        <section class="card bento-card">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Вакансії за статусами</h2>
                 <a class="btn btn-sm btn-link" asp-controller="Vacancies" asp-action="Index">Усі</a>
-            }
-        </div>
-        <div class="card-body">
-            @if (Model.RecentVacancies.Any())
-            {
-                <div class="stack-list">
-                    @foreach (var vacancy in Model.RecentVacancies.Take(3))
+            </div>
+            <div class="card-body bento-chart-body">
+                <div class="donut-chart donut-chart-small" style="--donut-gradient: @BuildDonutGradient(Model.VacancyStatusCounts, HrOptions.VacancyStatuses, vacancyColors)">
+                    <span>@Model.VacancyCount</span>
+                </div>
+                <div class="status-legend">
+                    @foreach (var status in HrOptions.VacancyStatuses)
                     {
-                        <a class="stack-list-item" asp-controller="Vacancies" asp-action="Details" asp-route-id="@vacancy.Id">
-                            <span class="vacancy-marker"></span>
-                            <span class="min-w-0">
-                                <strong>@vacancy.Title</strong>
-                                <small>@vacancy.SalaryMin - @vacancy.SalaryMax</small>
-                            </span>
-                            <span class="badge @HrOptions.VacancyStatusBadge(vacancy.Status)">@vacancy.Status</span>
-                        </a>
+                        var count = Model.VacancyStatusCounts.TryGetValue(status, out var value) ? value : 0;
+                        var percent = (int)Math.Round(count * 100.0 / vacancyTotal);
+
+                        <div class="status-legend-row">
+                            <span class="legend-dot" style="background:@vacancyColors[status]"></span>
+                            <span>@status</span>
+                            <strong>@count (@percent%)</strong>
+                        </div>
                     }
                 </div>
-            }
-            else
-            {
-                <div class="empty-state">Вакансій ще немає.</div>
-            }
-        </div>
-    </section>
+            </div>
+        </section>
+
+        <section class="card bento-card bento-card-vacancies">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Останні вакансії</h2>
+                <a class="btn btn-sm btn-link" asp-controller="Vacancies" asp-action="Index">Усі</a>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentVacancies.Any())
+                {
+                    <div class="stack-list">
+                        @foreach (var vacancy in Model.RecentVacancies.Take(3))
+                        {
+                            <a class="stack-list-item" asp-controller="Vacancies" asp-action="Details" asp-route-id="@vacancy.Id">
+                                <span class="vacancy-marker"></span>
+                                <span class="min-w-0">
+                                    <strong>@vacancy.Title</strong>
+                                    <small>@vacancy.SalaryMin - @vacancy.SalaryMax</small>
+                                </span>
+                                <span class="badge @HrOptions.VacancyStatusBadge(vacancy.Status)">@vacancy.Status</span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">Вакансій ще немає.</div>
+                }
+            </div>
+        </section>
+    }
 </div>

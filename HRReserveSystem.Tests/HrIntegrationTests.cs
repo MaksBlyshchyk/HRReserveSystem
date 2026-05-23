@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using HRReserveSystem.Data;
+using HRReserveSystem.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,6 +60,20 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Logout_Get_Is_Not_Allowed_And_Does_Not_Sign_Out()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+
+        var logoutResponse = await client.GetAsync("/Account/Logout");
+        var dashboardResponse = await client.GetAsync("/");
+
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, logoutResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, dashboardResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task Interviewer_Cannot_Open_Candidates()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -68,6 +83,24 @@ public class HrIntegrationTests
         var response = await client.GetAsync("/Candidates");
 
         AssertAccessDeniedRedirect(response);
+    }
+
+    [Fact]
+    public async Task Interviewer_Dashboard_Does_Not_Render_Hiring_Links()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "interviewer", "interviewer123");
+
+        var response = await client.GetAsync("/");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("href=\"/Candidates", html);
+        Assert.DoesNotContain("href=\"/Vacancies", html);
+        Assert.DoesNotContain("href=\"/Applications", html);
+        Assert.Contains("href=\"/InterviewFeedbacks", html);
+        Assert.Contains("href=\"/SoftSkillAssessments", html);
     }
 
     [Fact]
@@ -91,6 +124,33 @@ public class HrIntegrationTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.True(await db.Candidates.AnyAsync(candidate => candidate.Email == "candidate.integration@example.com"));
+    }
+
+    [Fact]
+    public async Task Candidate_Create_Ignores_Posted_ResumeFilePath()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        var response = await PostFormAsync(client, "/Candidates/Create", new Dictionary<string, string>
+        {
+            ["FullName"] = "Path Injection Candidate",
+            ["Email"] = "path.injection@example.com",
+            ["Phone"] = "+380671234002",
+            ["ExperienceYears"] = "1",
+            ["Skills"] = "Security review",
+            ["ResumeFilePath"] = "https://example.com/evil.exe"
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var resumePath = await db.Candidates
+            .Where(candidate => candidate.Email == "path.injection@example.com")
+            .Select(candidate => candidate.ResumeFilePath)
+            .SingleAsync();
+        Assert.Null(resumePath);
     }
 
     [Fact]
@@ -137,6 +197,24 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Database_Rejects_Duplicate_Application()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        db.Applications.Add(new Application
+        {
+            CandidateId = 1,
+            VacancyId = 1,
+            Status = "New",
+            AppliedAt = DateTime.UtcNow
+        });
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task Feedback_Score_11_Does_Not_Pass()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -155,6 +233,25 @@ public class HrIntegrationTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await db.InterviewFeedbacks.AnyAsync(feedback => feedback.Score == 11));
+    }
+
+    [Fact]
+    public async Task Database_Rejects_Invalid_Feedback_Score()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        db.InterviewFeedbacks.Add(new InterviewFeedback
+        {
+            InterviewId = 1,
+            Comment = "Direct DB constraint test.",
+            Score = 11,
+            Recommendation = "Hire",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
     [Fact]
@@ -194,6 +291,61 @@ public class HrIntegrationTests
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal(beforePath, afterPath);
+    }
+
+    [Fact]
+    public async Task Upload_Too_Large_Resume_Does_Not_Pass()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        var beforePath = await GetCandidateResumePathAsync(factory, 1);
+        var oversizedPdf = new byte[(5 * 1024 * 1024) + 1];
+        var response = await UploadResumeAsync(client, "/Candidates/UploadResume/1", "too-large.pdf", oversizedPdf);
+        var afterPath = await GetCandidateResumePathAsync(factory, 1);
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(beforePath, afterPath);
+    }
+
+    [Fact]
+    public async Task Api_Unauthenticated_Request_Returns_401_Not_Login_Redirect()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+
+        var response = await client.GetAsync("/api/candidates");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Api_Candidates_Returns_Dtos_Without_Password_Fields()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        var response = await client.GetAsync("/api/candidates");
+        var json = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("olena.koval@example.com", json);
+        Assert.DoesNotContain("Password", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PasswordHash", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Api_Forbidden_Role_Returns_403()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "interviewer", "interviewer123");
+
+        var response = await client.GetAsync("/api/candidates");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Theory]

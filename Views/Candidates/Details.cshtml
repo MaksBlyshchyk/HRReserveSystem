@@ -40,7 +40,7 @@
                 }
                 else
                 {
-                    <a class="btn btn-sm btn-outline-primary" href="@Model.ResumeFilePath" target="_blank" rel="noopener">Відкрити резюме</a>
+                    <a class="btn btn-sm btn-outline-primary" asp-action="DownloadResume" asp-route-id="@Model.Id" target="_blank" rel="noopener">Відкрити резюме</a>
                     <a class="btn btn-sm btn-outline-secondary" asp-action="DownloadResume" asp-route-id="@Model.Id">Завантажити</a>
                     <span class="text-muted ms-2">@Model.ResumeFilePath</span>
                 }

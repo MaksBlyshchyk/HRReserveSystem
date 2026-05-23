@@ -37,11 +37,10 @@
     </div>
     <div class="col-12">
         <label asp-for="ResumeFilePath" class="form-label"></label>
-        <input asp-for="ResumeFilePath" type="hidden" />
         @if (!string.IsNullOrWhiteSpace(Model.ResumeFilePath))
         {
             <div class="resume-current-file mb-2">
-                <a class="btn btn-sm btn-outline-primary" href="@Model.ResumeFilePath" target="_blank" rel="noopener">Відкрити поточне резюме</a>
+                <a class="btn btn-sm btn-outline-primary" asp-action="DownloadResume" asp-route-id="@Model.Id" target="_blank" rel="noopener">Відкрити поточне резюме</a>
                 <div class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" id="removeResume" name="removeResume" value="true" />
                     <label class="form-check-label" for="removeResume">Видалити поточний файл резюме</label>

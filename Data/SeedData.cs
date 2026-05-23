@@ -37,7 +37,6 @@ public static class SeedData
                 Email = "olena.koval@example.com",
                 Phone = "+380671112233",
                 Skills = "ASP.NET Core, C#, SQL, HR analytics",
-                ResumeFilePath = "/resumes/olena-koval.pdf",
                 ResumeSummary = "4 роки досвіду у .NET-розробці, внутрішніх HR-сервісах та роботі з SQL-звітами.",
                 ExperienceYears = 4,
                 CreatedAt = DateTime.UtcNow.AddDays(-14)
@@ -48,7 +47,6 @@ public static class SeedData
                 Email = "andrii.melnyk@example.com",
                 Phone = "+380501234567",
                 Skills = "JavaScript, React, UI testing, REST API",
-                ResumeFilePath = "/resumes/andrii-melnyk.pdf",
                 ResumeSummary = "Frontend developer з досвідом побудови SPA, тестування UI та інтеграції з REST API.",
                 ExperienceYears = 3,
                 CreatedAt = DateTime.UtcNow.AddDays(-11)
@@ -59,7 +57,6 @@ public static class SeedData
                 Email = "maria.shevchenko@example.com",
                 Phone = "+380931112244",
                 Skills = "Project management, communication, English B2",
-                ResumeFilePath = "/resumes/maria-shevchenko.pdf",
                 ResumeSummary = "Координаторка проєктів із сильними soft skills, досвідом комунікації з командами та клієнтами.",
                 ExperienceYears = 6,
                 CreatedAt = DateTime.UtcNow.AddDays(-8)
@@ -70,7 +67,6 @@ public static class SeedData
                 Email = "dmytro.ivanenko@example.com",
                 Phone = "+380681234567",
                 Skills = "QA, test cases, Postman, SQL",
-                ResumeFilePath = "/resumes/dmytro-ivanenko.pdf",
                 ResumeSummary = "QA engineer з практикою ручного тестування, API-перевірок і підготовки тестової документації.",
                 ExperienceYears = 2,
                 CreatedAt = DateTime.UtcNow.AddDays(-5)
@@ -81,7 +77,6 @@ public static class SeedData
                 Email = "iryna.bondar@example.com",
                 Phone = "+380991112255",
                 Skills = "Recruiting, sourcing, interviews, CRM",
-                ResumeFilePath = "/resumes/iryna-bondar.pdf",
                 ResumeSummary = "Рекрутерка з досвідом пошуку IT-кандидатів, проведення HR-інтерв'ю та ведення кадрового резерву.",
                 ExperienceYears = 5,
                 CreatedAt = DateTime.UtcNow.AddDays(-2)
@@ -339,9 +334,9 @@ public static class SeedData
         var interviewer = recruiters.FirstOrDefault(item => item.Role == "Interviewer") ?? admin;
 
         var candidates = await context.Candidates.ToListAsync();
-        foreach (var candidate in candidates.Where(candidate => string.IsNullOrWhiteSpace(candidate.ResumeFilePath)))
+        foreach (var candidate in candidates.Where(candidate => candidate.ResumeFilePath?.StartsWith("/resumes/", StringComparison.OrdinalIgnoreCase) == true))
         {
-            candidate.ResumeFilePath = $"/resumes/candidate-{candidate.Id}.pdf";
+            candidate.ResumeFilePath = null;
         }
 
         var applications = await context.Applications.ToListAsync();
