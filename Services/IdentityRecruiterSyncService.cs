@@ -27,6 +27,12 @@ public class IdentityRecruiterSyncService(
         var errors = new List<string>();
         await EnsureRoleAsync(recruiter.Role, errors);
 
+        if (string.IsNullOrWhiteSpace(recruiter.PasswordHash))
+        {
+            errors.Add($"Для користувача {recruiter.Login} не задано хеш пароля.");
+            return errors;
+        }
+
         var user = await userManager.FindByIdAsync(recruiter.Id.ToString());
         if (user is null)
         {
@@ -35,18 +41,20 @@ public class IdentityRecruiterSyncService(
                 Id = recruiter.Id.ToString(),
                 UserName = recruiter.Login,
                 Email = recruiter.Email,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                PasswordHash = recruiter.PasswordHash
             };
 
-            AddErrors(await userManager.CreateAsync(user, recruiter.Password), errors);
+            AddErrors(await userManager.CreateAsync(user), errors);
         }
         else
         {
             user.UserName = recruiter.Login;
             user.Email = recruiter.Email;
             user.EmailConfirmed = true;
+            user.PasswordHash = recruiter.PasswordHash;
+            user.SecurityStamp = Guid.NewGuid().ToString();
             AddErrors(await userManager.UpdateAsync(user), errors);
-            AddErrors(await ResetPasswordAsync(user, recruiter.Password), errors);
         }
 
         if (errors.Count > 0)
@@ -105,17 +113,6 @@ public class IdentityRecruiterSyncService(
             new Claim("DisplayName", recruiter.FullName),
             new Claim(RecruiterIdClaim, recruiter.Id.ToString())
         ]), errors);
-    }
-
-    private async Task<IdentityResult> ResetPasswordAsync(IdentityUser user, string password)
-    {
-        if (string.IsNullOrWhiteSpace(user.PasswordHash))
-        {
-            return await userManager.AddPasswordAsync(user, password);
-        }
-
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        return await userManager.ResetPasswordAsync(user, token, password);
     }
 
     private static void AddErrors(IdentityResult result, List<string> errors)

@@ -8,6 +8,7 @@ namespace HRReserveSystem.Controllers;
 
 public class AccountController(
     DemoUserService demoUserService,
+    IdentityRecruiterSyncService identitySync,
     SignInManager<IdentityUser> signInManager,
     UserManager<IdentityUser> userManager) : Controller
 {
@@ -35,20 +36,32 @@ public class AccountController(
             return View(model);
         }
 
-        var user = await userManager.FindByNameAsync(model.Login.Trim())
-            ?? await userManager.FindByEmailAsync(model.Login.Trim());
-        if (user is null)
+        var recruiter = await demoUserService.ValidateUserAsync(model.Login, model.Password);
+        if (recruiter is null)
         {
             ModelState.AddModelError(string.Empty, "Невірний логін або пароль.");
             return View(model);
         }
 
-        var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: false);
-        if (!result.Succeeded)
+        var user = await userManager.FindByIdAsync(recruiter.Id.ToString());
+        if (user is null)
         {
-            ModelState.AddModelError(string.Empty, "Невірний логін або пароль.");
-            return View(model);
+            var identityErrors = await identitySync.SyncRecruiterAsync(recruiter);
+            if (identityErrors.Count > 0)
+            {
+                ModelState.AddModelError(string.Empty, "Користувача не вдалося синхронізувати з Identity.");
+                return View(model);
+            }
+
+            user = await userManager.FindByIdAsync(recruiter.Id.ToString());
+            if (user is null)
+            {
+                ModelState.AddModelError(string.Empty, "Користувача не знайдено в Identity.");
+                return View(model);
+            }
         }
+
+        await signInManager.SignInAsync(user, model.RememberMe);
 
         if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
         {

@@ -1,14 +1,19 @@
 using HRReserveSystem.Data;
 using HRReserveSystem.Models;
 using HRReserveSystem.Services;
+using HRReserveSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRReserveSystem.Controllers;
 
 [Authorize(Roles = "Admin")]
-public class RecruitersController(ApplicationDbContext context, IdentityRecruiterSyncService identitySync) : Controller
+public class RecruitersController(
+    ApplicationDbContext context,
+    IdentityRecruiterSyncService identitySync,
+    IPasswordHasher<Recruiter> passwordHasher) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -36,19 +41,33 @@ public class RecruitersController(ApplicationDbContext context, IdentityRecruite
 
     public IActionResult Create()
     {
-        return View(new Recruiter());
+        return View(new RecruiterFormViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("FullName,Email,Login,Password,Role")] Recruiter recruiter)
+    public async Task<IActionResult> Create(RecruiterFormViewModel model)
     {
-        if (!ModelState.IsValid)
+        if (string.IsNullOrWhiteSpace(model.Password))
         {
-            return View(recruiter);
+            ModelState.AddModelError(nameof(RecruiterFormViewModel.Password), "Вкажіть пароль.");
         }
 
-        recruiter.CreatedAt = DateTime.UtcNow;
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var recruiter = new Recruiter
+        {
+            FullName = model.FullName,
+            Email = model.Email,
+            Login = model.Login,
+            Role = model.Role,
+            CreatedAt = DateTime.UtcNow
+        };
+        recruiter.PasswordHash = passwordHasher.HashPassword(recruiter, model.Password!);
+
         context.Recruiters.Add(recruiter);
         await context.SaveChangesAsync();
 
@@ -60,7 +79,7 @@ public class RecruitersController(ApplicationDbContext context, IdentityRecruite
                 ModelState.AddModelError(string.Empty, error);
             }
 
-            return View(recruiter);
+            return View(model);
         }
 
         return RedirectToAction(nameof(Index));
@@ -74,26 +93,41 @@ public class RecruitersController(ApplicationDbContext context, IdentityRecruite
         }
 
         var recruiter = await context.Recruiters.FindAsync(id);
-        return recruiter is null ? NotFound() : View(recruiter);
+        return recruiter is null ? NotFound() : View(ToFormModel(recruiter));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Email,Login,Password,Role,CreatedAt")] Recruiter recruiter)
+    public async Task<IActionResult> Edit(int id, RecruiterFormViewModel model)
     {
-        if (id != recruiter.Id)
+        if (id != model.Id)
         {
             return NotFound();
         }
 
         if (!ModelState.IsValid)
         {
-            return View(recruiter);
+            return View(model);
         }
 
         try
         {
-            context.Update(recruiter);
+            var recruiter = await context.Recruiters.FindAsync(id);
+            if (recruiter is null)
+            {
+                return NotFound();
+            }
+
+            recruiter.FullName = model.FullName;
+            recruiter.Email = model.Email;
+            recruiter.Login = model.Login;
+            recruiter.Role = model.Role;
+
+            if (!string.IsNullOrWhiteSpace(model.Password))
+            {
+                recruiter.PasswordHash = passwordHasher.HashPassword(recruiter, model.Password);
+            }
+
             await context.SaveChangesAsync();
 
             var identityErrors = await identitySync.SyncRecruiterAsync(recruiter);
@@ -104,12 +138,12 @@ public class RecruitersController(ApplicationDbContext context, IdentityRecruite
                     ModelState.AddModelError(string.Empty, error);
                 }
 
-                return View(recruiter);
+                return View(model);
             }
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await RecruiterExists(recruiter.Id))
+            if (!await RecruiterExists(model.Id))
             {
                 return NotFound();
             }
@@ -153,5 +187,18 @@ public class RecruitersController(ApplicationDbContext context, IdentityRecruite
     private async Task<bool> RecruiterExists(int id)
     {
         return await context.Recruiters.AnyAsync(item => item.Id == id);
+    }
+
+    private static RecruiterFormViewModel ToFormModel(Recruiter recruiter)
+    {
+        return new RecruiterFormViewModel
+        {
+            Id = recruiter.Id,
+            FullName = recruiter.FullName,
+            Email = recruiter.Email,
+            Login = recruiter.Login,
+            Role = recruiter.Role,
+            CreatedAt = recruiter.CreatedAt
+        };
     }
 }

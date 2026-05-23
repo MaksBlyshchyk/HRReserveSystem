@@ -1,4 +1,4 @@
-@model Recruiter
+@model RecruiterFormViewModel
 
 @{
     ViewData["Title"] = "Редагувати рекрутера";
@@ -26,8 +26,9 @@
         <span asp-validation-for="Login" class="text-danger"></span>
     </div>
     <div class="col-md-4">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" type="text" />
+        <label asp-for="Password" class="form-label">Новий пароль</label>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+        <div class="form-text">Залиште поле порожнім, щоб не змінювати пароль.</div>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
     <div class="col-md-4">

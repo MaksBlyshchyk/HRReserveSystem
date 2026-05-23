@@ -1,14 +1,18 @@
 using HRReserveSystem.Models;
 using HRReserveSystem.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace HRReserveSystem.Data;
 
 public static class SeedData
 {
-    public static async Task InitializeAsync(ApplicationDbContext context, IdentityRecruiterSyncService identitySync)
+    public static async Task InitializeAsync(
+        ApplicationDbContext context,
+        IdentityRecruiterSyncService identitySync,
+        IPasswordHasher<Recruiter> passwordHasher)
     {
-        var recruiters = await EnsureRecruitersAsync(context);
+        var recruiters = await EnsureRecruitersAsync(context, passwordHasher);
         await identitySync.SyncRecruitersAsync(recruiters);
 
         var databaseHasHrData =
@@ -237,52 +241,96 @@ public static class SeedData
         await context.SaveChangesAsync();
     }
 
-    private static async Task<IReadOnlyList<Recruiter>> EnsureRecruitersAsync(ApplicationDbContext context)
+    private static async Task<IReadOnlyList<Recruiter>> EnsureRecruitersAsync(
+        ApplicationDbContext context,
+        IPasswordHasher<Recruiter> passwordHasher)
     {
-        var seedRecruiters = new[]
-        {
-            new Recruiter
-            {
-                FullName = "Адміністратор системи",
-                Email = "admin@hrreserve.local",
-                Login = "admin",
-                Password = "admin123",
-                Role = "Admin",
-                CreatedAt = DateTime.UtcNow.AddDays(-30)
-            },
-            new Recruiter
-            {
-                FullName = "Оксана Рекрутер",
-                Email = "recruiter@hrreserve.local",
-                Login = "recruiter",
-                Password = "recruiter123",
-                Role = "Recruiter",
-                CreatedAt = DateTime.UtcNow.AddDays(-25)
-            },
-            new Recruiter
-            {
-                FullName = "Ігор Інтерв'юер",
-                Email = "interviewer@hrreserve.local",
-                Login = "interviewer",
-                Password = "interviewer123",
-                Role = "Interviewer",
-                CreatedAt = DateTime.UtcNow.AddDays(-20)
-            }
-        };
+        var createdAt = DateTime.UtcNow;
 
-        foreach (var recruiter in seedRecruiters)
+        foreach (var demoUser in DemoCredentials.Users)
         {
-            if (!await context.Recruiters.AnyAsync(item => item.Login == recruiter.Login))
+            var recruiter = await context.Recruiters.FirstOrDefaultAsync(item => item.Login == demoUser.Login);
+            if (recruiter is null)
             {
+                recruiter = new Recruiter
+                {
+                    FullName = demoUser.FullName,
+                    Email = demoUser.Email,
+                    Login = demoUser.Login,
+                    Role = demoUser.Role,
+                    CreatedAt = createdAt.AddDays(demoUser.Role switch
+                    {
+                        "Admin" => -30,
+                        "Recruiter" => -25,
+                        _ => -20
+                    })
+                };
+
+                recruiter.PasswordHash = passwordHasher.HashPassword(recruiter, demoUser.Password);
                 context.Recruiters.Add(recruiter);
+                continue;
+            }
+
+            recruiter.FullName = demoUser.FullName;
+            recruiter.Email = demoUser.Email;
+            recruiter.Role = demoUser.Role;
+
+            if (!PasswordMatches(passwordHasher, recruiter, demoUser.Password))
+            {
+                recruiter.PasswordHash = passwordHasher.HashPassword(recruiter, demoUser.Password);
             }
         }
 
+        await NormalizeExistingPasswordHashesAsync(context, passwordHasher);
         await context.SaveChangesAsync();
 
         return await context.Recruiters
             .OrderBy(recruiter => recruiter.Id)
             .ToListAsync();
+    }
+
+    private static async Task NormalizeExistingPasswordHashesAsync(
+        ApplicationDbContext context,
+        IPasswordHasher<Recruiter> passwordHasher)
+    {
+        var recruiters = await context.Recruiters.ToListAsync();
+        foreach (var recruiter in recruiters)
+        {
+            if (!string.IsNullOrWhiteSpace(recruiter.PasswordHash) && LooksLikeIdentityPasswordHash(recruiter.PasswordHash))
+            {
+                continue;
+            }
+
+            var password = DemoCredentials.GetPassword(recruiter.Login);
+            password ??= string.IsNullOrWhiteSpace(recruiter.PasswordHash) ? $"{recruiter.Login}123" : recruiter.PasswordHash;
+            recruiter.PasswordHash = passwordHasher.HashPassword(recruiter, password);
+        }
+    }
+
+    private static bool PasswordMatches(IPasswordHasher<Recruiter> passwordHasher, Recruiter recruiter, string password)
+    {
+        try
+        {
+            return passwordHasher.VerifyHashedPassword(recruiter, recruiter.PasswordHash, password)
+                is not PasswordVerificationResult.Failed;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private static bool LooksLikeIdentityPasswordHash(string passwordHash)
+    {
+        try
+        {
+            var bytes = Convert.FromBase64String(passwordHash);
+            return bytes.Length > 0 && bytes[0] == 0x01;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private static async Task NormalizeExistingRecordsAsync(ApplicationDbContext context, IReadOnlyList<Recruiter> recruiters)

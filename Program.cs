@@ -1,4 +1,5 @@
 using HRReserveSystem.Data;
+using HRReserveSystem.Models;
 using HRReserveSystem.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<DemoUserService>();
 builder.Services.AddScoped<IdentityRecruiterSyncService>();
+builder.Services.AddScoped<IPasswordHasher<Recruiter>, PasswordHasher<Recruiter>>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
 builder.Services.AddDataProtection()
@@ -47,8 +49,9 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var identitySync = scope.ServiceProvider.GetRequiredService<IdentityRecruiterSyncService>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<Recruiter>>();
     dbContext.Database.Migrate();
-    await SeedData.InitializeAsync(dbContext, identitySync);
+    await SeedData.InitializeAsync(dbContext, identitySync, passwordHasher);
 }
 
 // Configure the HTTP request pipeline.

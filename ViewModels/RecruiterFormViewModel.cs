@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace HRReserveSystem.Models;
+namespace HRReserveSystem.ViewModels;
 
-public class Recruiter
+public class RecruiterFormViewModel
 {
     public int Id { get; set; }
 
@@ -22,20 +22,15 @@ public class Recruiter
     [Display(Name = "Логін")]
     public string Login { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Хеш пароля обов'язковий.")]
-    [StringLength(500)]
-    [Display(Name = "Хеш пароля")]
-    public string PasswordHash { get; set; } = string.Empty;
+    [DataType(DataType.Password)]
+    [MinLength(6, ErrorMessage = "Пароль має містити щонайменше 6 символів.")]
+    [Display(Name = "Пароль")]
+    public string? Password { get; set; }
 
     [Required(ErrorMessage = "Оберіть роль.")]
     [StringLength(40)]
     [Display(Name = "Роль")]
     public string Role { get; set; } = "Recruiter";
 
-    [Display(Name = "Дата створення")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    public ICollection<Interview> Interviews { get; set; } = new List<Interview>();
-
-    public ICollection<InterviewFeedback> Feedbacks { get; set; } = new List<InterviewFeedback>();
 }
