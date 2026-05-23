@@ -10,7 +10,7 @@
                 <h1 class="h2 mb-2">Про HR Reserve System</h1>
                 <p class="text-muted mb-0">
                     HR Reserve System - навчальна ASP.NET Core MVC система для управління кадровим резервом, кандидатами,
-                    вакансіями, заявками, співбесідами, відгуками інтерв'юерів і оцінками soft skills.
+                    вакансіями, заявками, співбесідами, відгуками інтерв'юерів, оцінками soft skills і додатковим REST API.
                 </p>
             </div>
             <div class="dashboard-actions">
@@ -55,7 +55,7 @@
                     <span>Заявка</span>
                     <span>Етап відбору</span>
                     <span>Співбесіда</span>
-                    <span>Відгук</span>
+                    <span>Відгук інтерв'юера</span>
                     <span>Soft Skills</span>
                     <span>Рішення</span>
                 </div>
@@ -85,8 +85,8 @@
                         <p class="mb-0">Співбесіди з датою, типом, результатом, нотатками та відповідальним рекрутером.</p>
                     </div>
                     <div class="col-md-4">
-                        <span class="badge text-bg-secondary mb-2">Feedbacks</span>
-                        <p class="mb-0">Відгуки інтерв'юерів з оцінкою, рекомендацією та автором.</p>
+                        <span class="badge text-bg-secondary mb-2">InterviewFeedbacks</span>
+                        <p class="mb-0">Відгуки інтерв'юерів з оцінкою 1-10, рекомендацією та автором.</p>
                     </div>
                     <div class="col-md-4">
                         <span class="badge text-bg-dark mb-2">Recruiters</span>
@@ -94,7 +94,7 @@
                     </div>
                     <div class="col-md-4">
                         <span class="badge text-bg-light text-dark mb-2">Soft Skills</span>
-                        <p class="mb-0">Оцінки комунікації, командної роботи, відповідальності, стресостійкості та лідерства.</p>
+                        <p class="mb-0">UX-назва для моделі SoftSkillAssessments: оцінки комунікації, командної роботи, відповідальності, стресостійкості та лідерства.</p>
                     </div>
                 </div>
             </div>
@@ -131,7 +131,7 @@
                         <div class="candidate-path">
                             <span>Admin: повний CRUD</span>
                             <span>Recruiter: кандидати, вакансії, заявки, співбесіди</span>
-                            <span>Interviewer: співбесіди, відгуки, soft skills</span>
+                            <span>Interviewer: співбесіди, відгуки інтерв'юерів, soft skills</span>
                         </div>
                         <p class="text-muted mb-0 mt-3">
                             Детальний сценарій демонстрації, Use Case і опис таблиць також є в <code>Docs/CourseMaterials.md</code>.
@@ -147,7 +147,7 @@
                     <div class="card-body">
                         <h2 class="h5">MVC-архітектура</h2>
                         <p class="mb-0">
-                            Models описують сутності предметної області, Controllers обробляють запити й права доступу,
+                            Models описують сутності предметної області, Controllers обробляють MVC-сторінки, REST API та права доступу,
                             Views відображають Razor UI, а ApplicationDbContext працює з SQLite через EF Core 8.
                         </p>
                     </div>
@@ -158,8 +158,8 @@
                     <div class="card-body">
                         <h2 class="h5">Стек технологій</h2>
                         <p class="mb-0">
-                            .NET 8, ASP.NET Core MVC, Razor Views, Entity Framework Core 8, SQLite, Bootstrap,
-                            cookie authentication і HTML/CSS/JS для UI.
+                            .NET 8, ASP.NET Core MVC, Razor Views, ASP.NET Core Identity з cookie authentication,
+                            Entity Framework Core 8, SQLite, Bootstrap, xUnit integration tests і GitHub Actions CI.
                         </p>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
                         <p class="mb-0">
                             Admin керує всією системою та створює рекрутерів. Recruiter працює з кандидатами,
                             вакансіями, заявками й співбесідами. Interviewer переглядає співбесіди, додає відгуки
-                            та оцінює soft skills.
+                            інтерв'юерів та оцінює soft skills.
                         </p>
                     </div>
                 </div>
@@ -183,7 +183,7 @@
                 <h2 class="h5">Роль рекрутера</h2>
                 <p class="mb-0">
                     Рекрутер бачить повний контекст кандидата: контакти, резюме, заявку, поточний етап відбору,
-                    історію співбесід, feedback інтерв'юерів, оцінку soft skills і фінальне рішення щодо вакансії
+                    історію співбесід, відгуки інтерв'юерів, оцінку soft skills і фінальне рішення щодо вакансії
                     або кадрового резерву.
                 </p>
             </div>

@@ -49,13 +49,15 @@ CRUD-сторінки захищені атрибутами `[Authorize]`. Не�
 
 ## Демо-акаунти
 
-| Login | Password | Role |
+| Login | Demo password | Role |
 | --- | --- | --- |
 | `admin` | `admin123` | Admin |
 | `recruiter` | `recruiter123` | Recruiter |
 | `interviewer` | `interviewer123` | Interviewer |
 
-У предметній таблиці `Recruiters` зберігається `PasswordHash`, а не відкритий пароль. Вхід перевіряє пароль через `PasswordHasher<Recruiter>.VerifyHashedPassword`, після чого користувач підписується через ASP.NET Core Identity, щоб зберегти ролі та claims.
+Демо-паролі потрібні тільки для навчального/demo-сценарію. Вони описані в `Services/DemoCredentials.cs`, використовуються для seed/demo-входу і не зберігаються в БД у відкритому вигляді.
+
+У поточному source модель `Recruiter` використовує поле `PasswordHash`. Поля `Recruiter.Password` у предметній моделі немає. Auth flow такий: `DemoUserService` знаходить рекрутера за логіном або email, перевіряє введений пароль через `IPasswordHasher<Recruiter>` / `PasswordHasher<Recruiter>.VerifyHashedPassword`, після чого `AccountController` виконує sign-in через ASP.NET Core Identity, щоб зберегти ролі та claims у cookie.
 
 ## Реалізовані модулі
 
@@ -86,10 +88,11 @@ CRUD-сторінки захищені атрибутами `[Authorize]`. Не�
 
 ## Посилення даних і безпеки
 
-- Паролі рекрутерів зберігаються як хеші.
+- Паролі рекрутерів зберігаються як `PasswordHash`; відкриті паролі в таблиці `Recruiters` не зберігаються.
 - Logout виконується тільки через POST із `[ValidateAntiForgeryToken]`.
 - У БД додано унікальні індекси для email/login і пари `CandidateId + VacancyId`.
 - У БД додано check constraints для статусів, оцінок 1-10 і `SalaryMax >= SalaryMin`.
+- Resume upload приймає PDF/DOC/DOCX до 5 MB, зберігає файл під назвою на основі `Guid` і показує резюме зі сторінки кандидата.
 - Для кандидатів використовується soft delete через `IsDeleted`.
 - Для вакансій використовується архівація через `IsArchived`.
 - Архівні записи приховуються зі списків за замовчуванням.
@@ -122,7 +125,7 @@ dotnet build
 dotnet test
 ```
 
-GitHub Actions workflow `.github/workflows/ci.yml` виконує:
+Інтеграційні тести xUnit перевіряють login, ролі, обмеження БД, resume upload, API-відповіді та базові CRUD-сценарії. GitHub Actions workflow `.github/workflows/ci.yml` виконує:
 
 - `dotnet restore`
 - `dotnet build --configuration Release`
