@@ -101,7 +101,9 @@
                             <span class="badge @HrOptions.RecruiterRoleBadge(role)">@role</span>
                         </div>
                     </div>
-                    <a class="btn btn-outline-danger w-100" asp-controller="Account" asp-action="Logout">Вийти</a>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button class="btn btn-outline-danger w-100" type="submit">Вийти</button>
+                    </form>
                 </div>
             </aside>
         }
@@ -180,7 +182,9 @@
                                         <small>@role</small>
                                     </span>
                                 </div>
-                                <a class="dropdown-item-soft dropdown-item-danger" asp-controller="Account" asp-action="Logout">Вийти</a>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button class="dropdown-item-soft dropdown-item-danger w-100 text-start" type="submit">Вийти</button>
+                                </form>
                             </div>
                         </div>
                     }
@@ -239,7 +243,9 @@
                     <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
                     <span class="theme-toggle-text">Темна</span>
                 </button>
-                <a class="btn btn-outline-danger w-100" asp-controller="Account" asp-action="Logout">Вийти</a>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button class="btn btn-outline-danger w-100" type="submit">Вийти</button>
+                </form>
             </div>
         </div>
 

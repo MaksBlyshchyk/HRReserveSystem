@@ -9,8 +9,12 @@
                 <span class="badge text-bg-warning text-dark mb-3">403</span>
                 <h1 class="h3">Доступ обмежено</h1>
                 <p class="text-muted mb-4">Вашій ролі недостатньо прав для цієї операції.</p>
-                <a class="btn btn-primary" asp-controller="Home" asp-action="Index">На Dashboard</a>
-                <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Logout">Увійти під іншим користувачем</a>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-primary" asp-controller="Home" asp-action="Index">На Dashboard</a>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        <button class="btn btn-outline-secondary" type="submit">Увійти під іншим користувачем</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

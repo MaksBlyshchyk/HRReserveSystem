@@ -72,6 +72,8 @@ public class AccountController(
     }
 
     [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await signInManager.SignOutAsync();
