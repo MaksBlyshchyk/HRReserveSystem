@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HRReserveSystem.Models;
 
-public class Interview
+public class Interview : IValidatableObject
 {
     public int Id { get; set; }
 
@@ -16,12 +16,12 @@ public class Interview
     [Display(Name = "Дата співбесіди")]
     public DateTime InterviewDate { get; set; } = DateTime.Now;
 
-    [Required]
+    [Required(ErrorMessage = "Оберіть тип співбесіди.")]
     [StringLength(80)]
     [Display(Name = "Тип співбесіди")]
     public string InterviewType { get; set; } = string.Empty;
 
-    [Required]
+    [Required(ErrorMessage = "Оберіть результат співбесіди.")]
     [StringLength(80)]
     [Display(Name = "Результат")]
     public string Result { get; set; } = "Pending";
@@ -35,4 +35,17 @@ public class Interview
     public Recruiter? Recruiter { get; set; }
 
     public ICollection<InterviewFeedback> Feedbacks { get; set; } = new List<InterviewFeedback>();
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!HrOptions.InterviewTypes.Contains(InterviewType))
+        {
+            yield return new ValidationResult("Оберіть коректний тип співбесіди.", [nameof(InterviewType)]);
+        }
+
+        if (!HrOptions.InterviewResults.Contains(Result))
+        {
+            yield return new ValidationResult("Оберіть коректний результат співбесіди.", [nameof(Result)]);
+        }
+    }
 }

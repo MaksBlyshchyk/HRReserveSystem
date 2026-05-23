@@ -63,6 +63,13 @@ public class ApplicationsController(ApplicationDbContext context) : Controller
             return View(application);
         }
 
+        if (await ApplicationPairExists(application.CandidateId, application.VacancyId))
+        {
+            ModelState.AddModelError(string.Empty, "Заявка для цього кандидата на цю вакансію вже існує.");
+            await PopulateSelectLists(application.CandidateId, application.VacancyId);
+            return View(application);
+        }
+
         application.AppliedAt = DateTime.UtcNow;
         context.Add(application);
         await context.SaveChangesAsync();
@@ -98,6 +105,13 @@ public class ApplicationsController(ApplicationDbContext context) : Controller
 
         if (!ModelState.IsValid)
         {
+            await PopulateSelectLists(application.CandidateId, application.VacancyId);
+            return View(application);
+        }
+
+        if (await ApplicationPairExists(application.CandidateId, application.VacancyId, application.Id))
+        {
+            ModelState.AddModelError(string.Empty, "Заявка для цього кандидата на цю вакансію вже існує.");
             await PopulateSelectLists(application.CandidateId, application.VacancyId);
             return View(application);
         }
@@ -155,10 +169,12 @@ public class ApplicationsController(ApplicationDbContext context) : Controller
     {
         var candidates = await context.Candidates
             .AsNoTracking()
+            .Where(candidate => !candidate.IsDeleted)
             .OrderBy(candidate => candidate.FullName)
             .ToListAsync();
         var vacancies = await context.Vacancies
             .AsNoTracking()
+            .Where(vacancy => !vacancy.IsArchived)
             .OrderBy(vacancy => vacancy.Title)
             .ToListAsync();
 
@@ -169,5 +185,13 @@ public class ApplicationsController(ApplicationDbContext context) : Controller
     private async Task<bool> ApplicationExists(int id)
     {
         return await context.Applications.AnyAsync(item => item.Id == id);
+    }
+
+    private async Task<bool> ApplicationPairExists(int candidateId, int vacancyId, int? excludedApplicationId = null)
+    {
+        return await context.Applications.AnyAsync(item =>
+            item.CandidateId == candidateId &&
+            item.VacancyId == vacancyId &&
+            (!excludedApplicationId.HasValue || item.Id != excludedApplicationId.Value));
     }
 }

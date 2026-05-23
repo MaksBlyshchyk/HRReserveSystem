@@ -1,11 +1,11 @@
 @model Vacancy
 
 @{
-    ViewData["Title"] = "Видалити вакансію";
+    ViewData["Title"] = "Архівувати вакансію";
 }
 
-<h1 class="h2 mb-3">Видалити вакансію</h1>
-<div class="alert alert-warning">Підтвердіть видалення вакансії <strong>@Model.Title</strong>.</div>
+<h1 class="h2 mb-3">Архівувати вакансію</h1>
+<div class="alert alert-warning">Вакансія <strong>@Model.Title</strong> буде прихована зі списку, але заявки та історія співбесід залишаться в системі.</div>
 
 <dl class="row">
     <dt class="col-sm-3">Статус</dt>
@@ -16,6 +16,6 @@
 
 <form asp-action="Delete">
     <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Видалити</button>
+    <button type="submit" class="btn btn-danger">Архівувати</button>
     <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
 </form>

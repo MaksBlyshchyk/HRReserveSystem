@@ -142,6 +142,7 @@ public class SoftSkillAssessmentsController(ApplicationDbContext context) : Cont
     {
         var candidates = await context.Candidates
             .AsNoTracking()
+            .Where(candidate => !candidate.IsDeleted)
             .OrderBy(candidate => candidate.FullName)
             .ToListAsync();
 

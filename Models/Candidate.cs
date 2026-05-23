@@ -42,6 +42,9 @@ public class Candidate
     [Display(Name = "Дата створення")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [Display(Name = "Видалено")]
+    public bool IsDeleted { get; set; }
+
     public ICollection<Application> Applications { get; set; } = new List<Application>();
 
     public ICollection<SoftSkillAssessment> SoftSkillAssessments { get; set; } = new List<SoftSkillAssessment>();

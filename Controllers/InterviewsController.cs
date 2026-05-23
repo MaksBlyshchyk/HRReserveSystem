@@ -258,6 +258,8 @@ public class InterviewsController(ApplicationDbContext context, IEmailNotificati
             .AsNoTracking()
             .Include(application => application.Candidate)
             .Include(application => application.Vacancy)
+            .Where(application => application.Candidate != null && !application.Candidate.IsDeleted)
+            .Where(application => application.Vacancy != null && !application.Vacancy.IsArchived)
             .OrderByDescending(application => application.AppliedAt)
             .ToListAsync();
 

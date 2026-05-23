@@ -30,6 +30,7 @@ public class HomeController : Controller
 
         var vacancyStatusCounts = await _context.Vacancies
             .AsNoTracking()
+            .Where(vacancy => !vacancy.IsArchived)
             .GroupBy(vacancy => vacancy.Status)
             .Select(group => new { Status = group.Key, Count = group.Count() })
             .ToDictionaryAsync(item => item.Status, item => item.Count);
@@ -41,8 +42,8 @@ public class HomeController : Controller
 
         var dashboard = new DashboardViewModel
         {
-            CandidateCount = await _context.Candidates.CountAsync(),
-            VacancyCount = await _context.Vacancies.CountAsync(),
+            CandidateCount = await _context.Candidates.CountAsync(candidate => !candidate.IsDeleted),
+            VacancyCount = await _context.Vacancies.CountAsync(vacancy => !vacancy.IsArchived),
             ApplicationCount = await _context.Applications.CountAsync(),
             InterviewCount = await _context.Interviews.CountAsync(),
             RecruiterCount = await _context.Recruiters.CountAsync(),
@@ -59,11 +60,13 @@ public class HomeController : Controller
             AverageSoftSkillScore = softSkillScores.Count == 0 ? 0 : Math.Round(softSkillScores.Average(), 1),
             RecentCandidates = await _context.Candidates
                 .AsNoTracking()
+                .Where(candidate => !candidate.IsDeleted)
                 .OrderByDescending(candidate => candidate.CreatedAt)
                 .Take(5)
                 .ToListAsync(),
             RecentVacancies = await _context.Vacancies
                 .AsNoTracking()
+                .Where(vacancy => !vacancy.IsArchived)
                 .OrderByDescending(vacancy => vacancy.CreatedAt)
                 .Take(5)
                 .ToListAsync(),

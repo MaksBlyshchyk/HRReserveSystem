@@ -12,7 +12,7 @@ public class VacanciesController(ApplicationDbContext context) : Controller
 {
     public async Task<IActionResult> Index(string? search, string? status)
     {
-        var vacancies = context.Vacancies.AsNoTracking();
+        var vacancies = context.Vacancies.AsNoTracking().Where(vacancy => !vacancy.IsArchived);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -135,7 +135,7 @@ public class VacanciesController(ApplicationDbContext context) : Controller
 
         if (vacancy is not null)
         {
-            context.Vacancies.Remove(vacancy);
+            vacancy.IsArchived = true;
             await context.SaveChangesAsync();
         }
 

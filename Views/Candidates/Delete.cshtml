@@ -1,11 +1,11 @@
 @model Candidate
 
 @{
-    ViewData["Title"] = "Видалити кандидата";
+    ViewData["Title"] = "Приховати кандидата";
 }
 
-<h1 class="h2 mb-3">Видалити кандидата</h1>
-<div class="alert alert-warning">Підтвердіть видалення кандидата <strong>@Model.FullName</strong>.</div>
+<h1 class="h2 mb-3">Приховати кандидата</h1>
+<div class="alert alert-warning">Кандидат <strong>@Model.FullName</strong> буде прихований зі списку, але історичні HR-дані залишаться в системі.</div>
 
 <dl class="row">
     <dt class="col-sm-3">Електронна пошта</dt>
@@ -18,6 +18,6 @@
 
 <form asp-action="Delete">
     <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Видалити</button>
+    <button type="submit" class="btn btn-danger">Приховати</button>
     <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
 </form>

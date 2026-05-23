@@ -17,7 +17,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
     public async Task<IActionResult> Index(string? search, int? minExperience)
     {
-        var candidates = ApplyFilters(context.Candidates.AsNoTracking(), search, minExperience);
+        var candidates = ApplyFilters(context.Candidates.AsNoTracking().Where(candidate => !candidate.IsDeleted), search, minExperience);
 
         ViewData["CurrentFilter"] = search;
         ViewData["MinExperience"] = minExperience;
@@ -29,7 +29,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
     public async Task<IActionResult> ExportCsv(string? search, int? minExperience)
     {
-        var candidates = await ApplyFilters(context.Candidates.AsNoTracking(), search, minExperience)
+        var candidates = await ApplyFilters(context.Candidates.AsNoTracking().Where(candidate => !candidate.IsDeleted), search, minExperience)
             .OrderBy(candidate => candidate.FullName)
             .ToListAsync();
 
@@ -73,7 +73,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             .Include(item => item.Applications)
                 .ThenInclude(application => application.Vacancy)
             .Include(item => item.SoftSkillAssessments)
-            .FirstOrDefaultAsync(item => item.Id == id);
+            .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
 
         return candidate is null ? NotFound() : View(candidate);
     }
@@ -82,7 +82,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
     {
         var candidate = await context.Candidates
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == id);
+            .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
 
         if (candidate is null || string.IsNullOrWhiteSpace(candidate.ResumeFilePath))
         {
@@ -120,6 +120,12 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             return View(candidate);
         }
 
+        if (await CandidateEmailExists(candidate.Email))
+        {
+            ModelState.AddModelError(nameof(Candidate.Email), "Кандидат із такою електронною поштою вже існує.");
+            return View(candidate);
+        }
+
         var uploadedResumePath = await SaveResumeFileAsync(resumeFile);
         if (!string.IsNullOrWhiteSpace(uploadedResumePath))
         {
@@ -137,7 +143,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadResume(int id, IFormFile? resumeFile)
     {
-        var candidate = await context.Candidates.FindAsync(id);
+        var candidate = await context.Candidates.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
         if (candidate is null)
         {
             return NotFound();
@@ -176,7 +182,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             return NotFound();
         }
 
-        var candidate = await context.Candidates.FindAsync(id);
+        var candidate = await context.Candidates.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
         return candidate is null ? NotFound() : View(candidate);
     }
 
@@ -196,11 +202,17 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             return View(candidate);
         }
 
+        if (await CandidateEmailExists(candidate.Email, candidate.Id))
+        {
+            ModelState.AddModelError(nameof(Candidate.Email), "Кандидат із такою електронною поштою вже існує.");
+            return View(candidate);
+        }
+
         try
         {
             var oldResumePath = await context.Candidates
                 .AsNoTracking()
-                .Where(item => item.Id == id)
+                .Where(item => item.Id == id && !item.IsDeleted)
                 .Select(item => item.ResumeFilePath)
                 .FirstOrDefaultAsync();
 
@@ -242,7 +254,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
         var candidate = await context.Candidates
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == id);
+            .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
 
         return candidate is null ? NotFound() : View(candidate);
     }
@@ -251,13 +263,12 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var candidate = await context.Candidates.FindAsync(id);
+        var candidate = await context.Candidates.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
 
         if (candidate is not null)
         {
-            context.Candidates.Remove(candidate);
+            candidate.IsDeleted = true;
             await context.SaveChangesAsync();
-            DeleteStoredResume(candidate.ResumeFilePath);
         }
 
         return RedirectToAction(nameof(Index));
@@ -265,7 +276,15 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
 
     private async Task<bool> CandidateExists(int id)
     {
-        return await context.Candidates.AnyAsync(item => item.Id == id);
+        return await context.Candidates.AnyAsync(item => item.Id == id && !item.IsDeleted);
+    }
+
+    private async Task<bool> CandidateEmailExists(string email, int? excludedCandidateId = null)
+    {
+        var normalizedEmail = email.Trim().ToLower();
+        return await context.Candidates.AnyAsync(item =>
+            item.Email.ToLower() == normalizedEmail &&
+            (!excludedCandidateId.HasValue || item.Id != excludedCandidateId.Value));
     }
 
     private static IQueryable<Candidate> ApplyFilters(IQueryable<Candidate> candidates, string? search, int? minExperience)

@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using HRReserveSystem.Models;
 
 namespace HRReserveSystem.ViewModels;
 
-public class RecruiterFormViewModel
+public class RecruiterFormViewModel : IValidatableObject
 {
     public int Id { get; set; }
 
@@ -33,4 +34,12 @@ public class RecruiterFormViewModel
     public string Role { get; set; } = "Recruiter";
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!HrOptions.RecruiterRoles.Contains(Role))
+        {
+            yield return new ValidationResult("Оберіть коректну роль користувача.", [nameof(Role)]);
+        }
+    }
 }

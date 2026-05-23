@@ -191,6 +191,9 @@ public class InterviewFeedbacksController(ApplicationDbContext context) : Contro
                 .ThenInclude(application => application!.Candidate)
             .Include(interview => interview.Application)
                 .ThenInclude(application => application!.Vacancy)
+            .Where(interview => interview.Application != null)
+            .Where(interview => interview.Application!.Candidate != null && !interview.Application.Candidate.IsDeleted)
+            .Where(interview => interview.Application!.Vacancy != null && !interview.Application.Vacancy.IsArchived)
             .OrderByDescending(interview => interview.InterviewDate)
             .ToListAsync();
 

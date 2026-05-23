@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HRReserveSystem.Models;
 
-public class Recruiter
+public class Recruiter : IValidatableObject
 {
     public int Id { get; set; }
 
@@ -38,4 +38,12 @@ public class Recruiter
     public ICollection<Interview> Interviews { get; set; } = new List<Interview>();
 
     public ICollection<InterviewFeedback> Feedbacks { get; set; } = new List<InterviewFeedback>();
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!HrOptions.RecruiterRoles.Contains(Role))
+        {
+            yield return new ValidationResult("Оберіть коректну роль користувача.", [nameof(Role)]);
+        }
+    }
 }

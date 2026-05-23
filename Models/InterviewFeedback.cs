@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HRReserveSystem.Models;
 
-public class InterviewFeedback
+public class InterviewFeedback : IValidatableObject
 {
     public int Id { get; set; }
 
@@ -13,16 +13,16 @@ public class InterviewFeedback
     [Display(Name = "Автор відгуку")]
     public int? RecruiterId { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Вкажіть коментар інтерв'юера.")]
     [StringLength(2000)]
     [Display(Name = "Коментар")]
     public string Comment { get; set; } = string.Empty;
 
-    [Range(1, 10)]
+    [Range(1, 10, ErrorMessage = "Оцінка має бути від 1 до 10.")]
     [Display(Name = "Оцінка")]
     public int Score { get; set; } = 5;
 
-    [Required]
+    [Required(ErrorMessage = "Оберіть рекомендацію.")]
     [StringLength(120)]
     [Display(Name = "Рекомендація")]
     public string Recommendation { get; set; } = string.Empty;
@@ -33,4 +33,12 @@ public class InterviewFeedback
     public Interview? Interview { get; set; }
 
     public Recruiter? Recruiter { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!HrOptions.FeedbackRecommendations.Contains(Recommendation))
+        {
+            yield return new ValidationResult("Оберіть коректну рекомендацію.", [nameof(Recommendation)]);
+        }
+    }
 }

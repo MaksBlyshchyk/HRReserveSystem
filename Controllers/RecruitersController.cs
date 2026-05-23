@@ -58,6 +58,12 @@ public class RecruitersController(
             return View(model);
         }
 
+        await AddDuplicateRecruiterErrors(model);
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
         var recruiter = new Recruiter
         {
             FullName = model.FullName,
@@ -105,6 +111,12 @@ public class RecruitersController(
             return NotFound();
         }
 
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        await AddDuplicateRecruiterErrors(model, model.Id);
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -187,6 +199,26 @@ public class RecruitersController(
     private async Task<bool> RecruiterExists(int id)
     {
         return await context.Recruiters.AnyAsync(item => item.Id == id);
+    }
+
+    private async Task AddDuplicateRecruiterErrors(RecruiterFormViewModel model, int? excludedRecruiterId = null)
+    {
+        var normalizedEmail = model.Email.Trim().ToLower();
+        var normalizedLogin = model.Login.Trim().ToLower();
+
+        if (await context.Recruiters.AnyAsync(item =>
+                item.Email.ToLower() == normalizedEmail &&
+                (!excludedRecruiterId.HasValue || item.Id != excludedRecruiterId.Value)))
+        {
+            ModelState.AddModelError(nameof(RecruiterFormViewModel.Email), "Рекрутер із такою електронною поштою вже існує.");
+        }
+
+        if (await context.Recruiters.AnyAsync(item =>
+                item.Login.ToLower() == normalizedLogin &&
+                (!excludedRecruiterId.HasValue || item.Id != excludedRecruiterId.Value)))
+        {
+            ModelState.AddModelError(nameof(RecruiterFormViewModel.Login), "Рекрутер із таким логіном уже існує.");
+        }
     }
 
     private static RecruiterFormViewModel ToFormModel(Recruiter recruiter)
