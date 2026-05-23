@@ -78,6 +78,32 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
         return candidate is null ? NotFound() : View(candidate);
     }
 
+    public async Task<IActionResult> DownloadResume(int id)
+    {
+        var candidate = await context.Candidates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == id);
+
+        if (candidate is null || string.IsNullOrWhiteSpace(candidate.ResumeFilePath))
+        {
+            return NotFound();
+        }
+
+        if (!candidate.ResumeFilePath.StartsWith("/uploads/resumes/", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(candidate.ResumeFilePath);
+        }
+
+        var fileName = Path.GetFileName(candidate.ResumeFilePath);
+        var physicalPath = Path.Combine(environment.WebRootPath, "uploads", "resumes", fileName);
+        if (!System.IO.File.Exists(physicalPath))
+        {
+            return NotFound();
+        }
+
+        return PhysicalFile(physicalPath, GetResumeContentType(fileName), fileName);
+    }
+
     public IActionResult Create()
     {
         return View(new Candidate());
@@ -105,6 +131,42 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
         await context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadResume(int id, IFormFile? resumeFile)
+    {
+        var candidate = await context.Candidates.FindAsync(id);
+        if (candidate is null)
+        {
+            return NotFound();
+        }
+
+        ValidateResumeFile(resumeFile, requireFile: true);
+        if (!ModelState.IsValid)
+        {
+            var resumeError = ModelState.TryGetValue(nameof(Candidate.ResumeFilePath), out var entry)
+                ? entry.Errors.FirstOrDefault()?.ErrorMessage
+                : null;
+            TempData["ResumeError"] = resumeError ?? "Файл резюме не вибрано.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var oldResumePath = candidate.ResumeFilePath;
+        var uploadedResumePath = await SaveResumeFileAsync(resumeFile);
+        if (string.IsNullOrWhiteSpace(uploadedResumePath))
+        {
+            TempData["ResumeError"] = "Файл резюме не вибрано.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        DeleteStoredResume(oldResumePath);
+        candidate.ResumeFilePath = uploadedResumePath;
+        await context.SaveChangesAsync();
+
+        TempData["ResumeMessage"] = "Резюме кандидата оновлено.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     public async Task<IActionResult> Edit(int? id)
@@ -238,10 +300,15 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             : text;
     }
 
-    private void ValidateResumeFile(IFormFile? resumeFile)
+    private void ValidateResumeFile(IFormFile? resumeFile, bool requireFile = false)
     {
         if (resumeFile is null || resumeFile.Length == 0)
         {
+            if (requireFile)
+            {
+                ModelState.AddModelError(nameof(Candidate.ResumeFilePath), "Файл резюме не вибрано.");
+            }
+
             return;
         }
 
@@ -275,6 +342,17 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
         await resumeFile.CopyToAsync(stream);
 
         return $"/uploads/resumes/{fileName}";
+    }
+
+    private static string GetResumeContentType(string fileName)
+    {
+        return Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            _ => "application/octet-stream"
+        };
     }
 
     private void DeleteStoredResume(string? resumePath)
