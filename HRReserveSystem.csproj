@@ -20,4 +20,11 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="HRReserveSystem.Tests\**\*.cs" />
+    <Content Remove="HRReserveSystem.Tests\**\*" />
+    <EmbeddedResource Remove="HRReserveSystem.Tests\**\*" />
+    <None Remove="HRReserveSystem.Tests\**\*" />
+  </ItemGroup>
+
 </Project>
