@@ -43,7 +43,13 @@ public class EmailNotificationService(
 
         var candidate = interview.Application?.Candidate;
         var vacancy = interview.Application?.Vacancy;
-        var recipients = new[] { candidate?.Email, interview.Recruiter?.Email }
+        var responsible = interview.Recruiter;
+        var responsibleLabel = responsible is null
+            ? "Не призначено"
+            : string.IsNullOrWhiteSpace(responsible.Role)
+                ? responsible.FullName
+                : $"{responsible.FullName} ({responsible.Role})";
+        var recipients = new[] { candidate?.Email, responsible?.Email }
             .Where(email => !string.IsNullOrWhiteSpace(email))
             .Select(email => email!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -71,9 +77,9 @@ public class EmailNotificationService(
             .AppendLine($"Дата і час: {interview.InterviewDate:g}")
             .AppendLine($"Тип: {interview.InterviewType}")
             .AppendLine($"Результат: {interview.Result}")
-            .AppendLine($"Рекрутер: {interview.Recruiter?.FullName ?? "Не призначено"}")
+            .AppendLine($"Відповідальний: {responsibleLabel}")
             .AppendLine()
-            .AppendLine($"Нотатки: {interview.Notes ?? "Немає"}")
+            .AppendLine($"Коментар/опис: {interview.Notes ?? "Немає"}")
             .ToString();
 
         await DeliverAsync(recipients, subject, body);

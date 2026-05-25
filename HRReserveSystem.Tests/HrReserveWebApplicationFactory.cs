@@ -8,6 +8,8 @@ internal sealed class HrReserveWebApplicationFactory : WebApplicationFactory<Pro
 {
     private readonly string tempDirectory = Path.Combine(Path.GetTempPath(), $"HRReserveSystem.Tests-{Guid.NewGuid():N}");
 
+    public string OutboxPath => Path.Combine(tempDirectory, "EmailOutbox");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Directory.CreateDirectory(tempDirectory);
@@ -19,7 +21,7 @@ internal sealed class HrReserveWebApplicationFactory : WebApplicationFactory<Pro
             {
                 ["ConnectionStrings:DefaultConnection"] = $"Data Source={Path.Combine(tempDirectory, "hrreserve-test.db")}",
                 ["Email:Enabled"] = "false",
-                ["Email:OutboxPath"] = Path.Combine(tempDirectory, "EmailOutbox")
+                ["Email:OutboxPath"] = OutboxPath
             });
         });
     }

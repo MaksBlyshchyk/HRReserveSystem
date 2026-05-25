@@ -10,6 +10,15 @@ namespace HRReserveSystem.Tests;
 
 public class HrIntegrationTests
 {
+    private sealed record InterviewPostData(
+        int InterviewId,
+        int ApplicationId,
+        string CandidateName,
+        string CandidateEmail,
+        string VacancyTitle,
+        int? RecruiterId,
+        string? RecruiterEmail);
+
     [Fact]
     public async Task Project_Starts_And_Login_Page_Loads()
     {
@@ -215,6 +224,79 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Interview_Create_With_Smtp_Disabled_Creates_Outbox_Message()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+        var interviewData = await GetNewInterviewPostDataAsync(factory);
+        var interviewDate = new DateTime(2031, 6, 3, 10, 30, 0);
+
+        var response = await PostFormAsync(client, "/Interviews/Create", new Dictionary<string, string>
+        {
+            ["ApplicationId"] = interviewData.ApplicationId.ToString(),
+            ["RecruiterId"] = interviewData.RecruiterId?.ToString() ?? string.Empty,
+            ["InterviewDate"] = interviewDate.ToString("yyyy-MM-ddTHH:mm"),
+            ["InterviewType"] = "Technical",
+            ["Result"] = "Pending",
+            ["Notes"] = "Outbox create integration test."
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var message = AssertSingleOutboxMessage(factory);
+        Assert.Contains("Заплановано співбесіду", message);
+        Assert.Contains(interviewData.CandidateEmail, message);
+        Assert.Contains(interviewData.CandidateName, message);
+        Assert.Contains(interviewData.VacancyTitle, message);
+        Assert.Contains(interviewDate.ToString("g"), message);
+        Assert.Contains("Technical", message);
+        Assert.Contains("Outbox create integration test.", message);
+        Assert.Contains("SMTP is disabled or host is empty.", message);
+
+        if (!string.IsNullOrWhiteSpace(interviewData.RecruiterEmail))
+        {
+            Assert.Contains(interviewData.RecruiterEmail, message);
+        }
+    }
+
+    [Fact]
+    public async Task Interview_Edit_With_Smtp_Disabled_Creates_Outbox_Message()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+        var interviewData = await GetExistingInterviewPostDataAsync(factory);
+        var interviewDate = new DateTime(2031, 7, 4, 14, 45, 0);
+
+        var response = await PostFormAsync(client, $"/Interviews/Edit/{interviewData.InterviewId}", new Dictionary<string, string>
+        {
+            ["Id"] = interviewData.InterviewId.ToString(),
+            ["ApplicationId"] = interviewData.ApplicationId.ToString(),
+            ["RecruiterId"] = interviewData.RecruiterId?.ToString() ?? string.Empty,
+            ["InterviewDate"] = interviewDate.ToString("yyyy-MM-ddTHH:mm"),
+            ["InterviewType"] = "Final",
+            ["Result"] = "Pending",
+            ["Notes"] = "Outbox edit integration test."
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var message = AssertSingleOutboxMessage(factory);
+        Assert.Contains("Оновлено співбесіду", message);
+        Assert.Contains(interviewData.CandidateEmail, message);
+        Assert.Contains(interviewData.CandidateName, message);
+        Assert.Contains(interviewData.VacancyTitle, message);
+        Assert.Contains(interviewDate.ToString("g"), message);
+        Assert.Contains("Final", message);
+        Assert.Contains("Outbox edit integration test.", message);
+        Assert.Contains("SMTP is disabled or host is empty.", message);
+
+        if (!string.IsNullOrWhiteSpace(interviewData.RecruiterEmail))
+        {
+            Assert.Contains(interviewData.RecruiterEmail, message);
+        }
+    }
+
+    [Fact]
     public async Task Feedback_Score_11_Does_Not_Pass()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -364,6 +446,62 @@ public class HrIntegrationTests
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith("/uploads/resumes/", resumePath);
         Assert.EndsWith(Path.GetExtension(fileName), resumePath);
+    }
+
+    private static async Task<InterviewPostData> GetNewInterviewPostDataAsync(HrReserveWebApplicationFactory factory)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var application = await db.Applications
+            .AsNoTracking()
+            .Include(item => item.Candidate)
+            .Include(item => item.Vacancy)
+            .OrderBy(item => item.Id)
+            .FirstAsync();
+        var recruiter = await db.Recruiters
+            .AsNoTracking()
+            .OrderBy(item => item.Id)
+            .FirstAsync(item => item.Login == "recruiter");
+
+        return new InterviewPostData(
+            InterviewId: 0,
+            ApplicationId: application.Id,
+            CandidateName: application.Candidate!.FullName,
+            CandidateEmail: application.Candidate.Email,
+            VacancyTitle: application.Vacancy!.Title,
+            RecruiterId: recruiter.Id,
+            RecruiterEmail: recruiter.Email);
+    }
+
+    private static async Task<InterviewPostData> GetExistingInterviewPostDataAsync(HrReserveWebApplicationFactory factory)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var interview = await db.Interviews
+            .AsNoTracking()
+            .Include(item => item.Application)
+                .ThenInclude(application => application!.Candidate)
+            .Include(item => item.Application)
+                .ThenInclude(application => application!.Vacancy)
+            .Include(item => item.Recruiter)
+            .OrderBy(item => item.Id)
+            .FirstAsync();
+
+        return new InterviewPostData(
+            InterviewId: interview.Id,
+            ApplicationId: interview.ApplicationId,
+            CandidateName: interview.Application!.Candidate!.FullName,
+            CandidateEmail: interview.Application.Candidate.Email,
+            VacancyTitle: interview.Application.Vacancy!.Title,
+            RecruiterId: interview.RecruiterId,
+            RecruiterEmail: interview.Recruiter?.Email);
+    }
+
+    private static string AssertSingleOutboxMessage(HrReserveWebApplicationFactory factory)
+    {
+        Assert.True(Directory.Exists(factory.OutboxPath), $"Outbox directory was not created: {factory.OutboxPath}");
+        var filePath = Assert.Single(Directory.GetFiles(factory.OutboxPath, "*.txt"));
+        return File.ReadAllText(filePath);
     }
 
     private static HttpClient CreateClient(WebApplicationFactory<Program> factory)
