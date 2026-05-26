@@ -10,9 +10,9 @@ namespace HRReserveSystem.Controllers;
 [Authorize(Roles = "Admin,Recruiter")]
 public class VacanciesController(ApplicationDbContext context) : Controller
 {
-    public async Task<IActionResult> Index(string? search, string? status)
+    public async Task<IActionResult> Index(string? search, string? status, bool showArchived = false)
     {
-        var vacancies = context.Vacancies.AsNoTracking().Where(vacancy => !vacancy.IsArchived);
+        var vacancies = context.Vacancies.AsNoTracking().Where(vacancy => vacancy.IsArchived == showArchived);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -26,6 +26,7 @@ public class VacanciesController(ApplicationDbContext context) : Controller
 
         ViewData["CurrentFilter"] = search;
         ViewData["StatusFilter"] = status;
+        ViewData["ShowArchived"] = showArchived;
         ViewData["Statuses"] = new SelectList(HrOptions.VacancyStatuses, status);
 
         return View(await vacancies
@@ -140,6 +141,21 @@ public class VacanciesController(ApplicationDbContext context) : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var vacancy = await context.Vacancies.FirstOrDefaultAsync(item => item.Id == id && item.IsArchived);
+
+        if (vacancy is not null)
+        {
+            vacancy.IsArchived = false;
+            await context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index), new { showArchived = true });
     }
 
     private async Task<bool> VacancyExists(int id)

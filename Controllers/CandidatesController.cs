@@ -15,12 +15,13 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
     private const long MaxResumeFileSize = 5 * 1024 * 1024;
     private static readonly string[] AllowedResumeExtensions = [".pdf", ".doc", ".docx"];
 
-    public async Task<IActionResult> Index(string? search, int? minExperience)
+    public async Task<IActionResult> Index(string? search, int? minExperience, bool showHidden = false)
     {
-        var candidates = ApplyFilters(context.Candidates.AsNoTracking().Where(candidate => !candidate.IsDeleted), search, minExperience);
+        var candidates = ApplyFilters(context.Candidates.AsNoTracking().Where(candidate => candidate.IsDeleted == showHidden), search, minExperience);
 
         ViewData["CurrentFilter"] = search;
         ViewData["MinExperience"] = minExperience;
+        ViewData["ShowHidden"] = showHidden;
 
         return View(await candidates
             .OrderBy(candidate => candidate.FullName)
@@ -73,7 +74,7 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
             .Include(item => item.Applications)
                 .ThenInclude(application => application.Vacancy)
             .Include(item => item.SoftSkillAssessments)
-            .FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
+            .FirstOrDefaultAsync(item => item.Id == id);
 
         return candidate is null ? NotFound() : View(candidate);
     }
@@ -284,6 +285,21 @@ public class CandidatesController(ApplicationDbContext context, IWebHostEnvironm
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var candidate = await context.Candidates.FirstOrDefaultAsync(item => item.Id == id && item.IsDeleted);
+
+        if (candidate is not null)
+        {
+            candidate.IsDeleted = false;
+            await context.SaveChangesAsync();
+        }
+
+        return RedirectToAction(nameof(Index), new { showHidden = true });
     }
 
     private async Task<bool> CandidateExists(int id)

@@ -159,9 +159,8 @@
                             </div>
                         </div>
                     }
-                    <button class="btn btn-sm btn-theme-toggle" type="button" data-theme-toggle aria-label="Перемкнути тему" aria-pressed="false">
+                    <button class="btn btn-sm btn-theme-toggle btn-theme-toggle-compact" type="button" data-theme-toggle aria-label="Перемкнути тему" aria-pressed="false">
                         <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
-                        <span class="theme-toggle-text">Темна</span>
                     </button>
                     @if (isAuthenticated)
                     {
@@ -220,28 +219,54 @@
             </div>
             <div class="offcanvas-body d-flex flex-column">
                 <nav class="sidebar-nav flex-grow-1">
-                    <a class="sidebar-link @(activeClass("Home", "Index"))" asp-area="" asp-controller="Home" asp-action="Index">Dashboard</a>
+                    <a class="sidebar-link @(activeClass("Home", "Index"))" asp-area="" asp-controller="Home" asp-action="Index">
+                        <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" /></svg></span>
+                        <span>Dashboard</span>
+                    </a>
                     @if (canRecruit)
                     {
-                        <a class="sidebar-link @(activeClass("Candidates", ""))" asp-area="" asp-controller="Candidates" asp-action="Index">Кандидати</a>
-                        <a class="sidebar-link @(activeClass("Vacancies", ""))" asp-area="" asp-controller="Vacancies" asp-action="Index">Вакансії</a>
-                        <a class="sidebar-link @(activeClass("Applications", ""))" asp-area="" asp-controller="Applications" asp-action="Index">Заявки</a>
+                        <a class="sidebar-link @(activeClass("Candidates", ""))" asp-area="" asp-controller="Candidates" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg></span>
+                            <span>Кандидати</span>
+                        </a>
+                        <a class="sidebar-link @(activeClass("Vacancies", ""))" asp-area="" asp-controller="Vacancies" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0h12v12H4V7h4Zm0 5h8" /></svg></span>
+                            <span>Вакансії</span>
+                        </a>
+                        <a class="sidebar-link @(activeClass("Applications", ""))" asp-area="" asp-controller="Applications" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v5h5M9 13h6M9 17h6" /></svg></span>
+                            <span>Заявки</span>
+                        </a>
                     }
-                    <a class="sidebar-link @(activeClass("Interviews", ""))" asp-area="" asp-controller="Interviews" asp-action="Index">Співбесіди</a>
+                    <a class="sidebar-link @(activeClass("Interviews", ""))" asp-area="" asp-controller="Interviews" asp-action="Index">
+                        <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4v3m10-3v3M5 8h14M5 5h14v15H5zM8 12h3m3 0h2M8 16h5" /></svg></span>
+                        <span>Співбесіди</span>
+                    </a>
                     @if (canInterview)
                     {
-                        <a class="sidebar-link @(activeClass("InterviewFeedbacks", ""))" asp-area="" asp-controller="InterviewFeedbacks" asp-action="Index">Відгуки</a>
-                        <a class="sidebar-link @(activeClass("SoftSkillAssessments", ""))" asp-area="" asp-controller="SoftSkillAssessments" asp-action="Index">Soft Skills</a>
+                        <a class="sidebar-link @(activeClass("InterviewFeedbacks", ""))" asp-area="" asp-controller="InterviewFeedbacks" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h14v10H8l-3 4V5Zm4 4h6m-6 4h4" /></svg></span>
+                            <span>Відгуки</span>
+                        </a>
+                        <a class="sidebar-link @(activeClass("SoftSkillAssessments", ""))" asp-area="" asp-controller="SoftSkillAssessments" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6-5.4-2.9-5.4 2.9 1-6-4.4-4.3 6.1-.9z" /></svg></span>
+                            <span>Soft Skills</span>
+                        </a>
                     }
                     @if (isAdmin)
                     {
-                        <a class="sidebar-link @(activeClass("Recruiters", ""))" asp-area="" asp-controller="Recruiters" asp-action="Index">Рекрутери</a>
+                        <a class="sidebar-link @(activeClass("Recruiters", ""))" asp-area="" asp-controller="Recruiters" asp-action="Index">
+                            <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm6-1a3 3 0 1 0 0-6M3 20a6 6 0 0 1 12 0m3 0a6 6 0 0 0-3-5.2" /></svg></span>
+                            <span>Рекрутери</span>
+                        </a>
                     }
-                    <a class="sidebar-link @(activeClass("Home", "About"))" asp-area="" asp-controller="Home" asp-action="About">Про систему</a>
+                    <a class="sidebar-link @(activeClass("Home", "About"))" asp-area="" asp-controller="Home" asp-action="About">
+                        <span class="sidebar-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 17v-5m0-4h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" /></svg></span>
+                        <span>Про систему</span>
+                    </a>
                 </nav>
-                <button class="btn btn-theme-toggle w-100 mb-2" type="button" data-theme-toggle aria-label="Перемкнути тему">
+                <button class="btn btn-theme-toggle btn-theme-toggle-compact w-100 mb-2" type="button" data-theme-toggle aria-label="Перемкнути тему">
                     <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
-                    <span class="theme-toggle-text">Темна</span>
                 </button>
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button class="btn btn-outline-danger w-100" type="submit">Вийти</button>
@@ -252,7 +277,7 @@
         <nav class="mobile-bottom-nav d-md-none" aria-label="Швидка мобільна навігація">
             <a class="@(activeClass("Home", "Index"))" asp-area="" asp-controller="Home" asp-action="Index">
                 <span aria-hidden="true">▦</span>
-                <small>Dashboard</small>
+                <small>Панель</small>
             </a>
             @if (canRecruit)
             {

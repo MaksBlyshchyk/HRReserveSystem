@@ -211,6 +211,38 @@
         });
     }
 
+    function initClickableRows() {
+        document.querySelectorAll("[data-row-link]").forEach(function (row) {
+            function openDetails() {
+                const url = row.getAttribute("data-row-link");
+                if (url) {
+                    window.location.href = url;
+                }
+            }
+
+            row.addEventListener("click", function (event) {
+                if (event.target.closest("a, button, input, select, textarea, label")) {
+                    return;
+                }
+
+                openDetails();
+            });
+
+            row.addEventListener("keydown", function (event) {
+                if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                }
+
+                if (event.target.closest("a, button, input, select, textarea, label")) {
+                    return;
+                }
+
+                event.preventDefault();
+                openDetails();
+            });
+        });
+    }
+
     applyTheme(getSavedTheme());
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -221,5 +253,6 @@
         initNotifications();
         initGlobalSearch();
         initDemoLoginFill();
+        initClickableRows();
     });
 })();

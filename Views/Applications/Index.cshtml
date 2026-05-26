@@ -47,7 +47,7 @@
                 {
                     var badgeClass = HrOptions.ApplicationStatusBadge(item.Status);
 
-                    <tr>
+                    <tr class="clickable-row" data-row-link="@Url.Action("Details", new { id = item.Id })" tabindex="0">
                         <td>@item.Candidate?.FullName</td>
                         <td>@item.Vacancy?.Title</td>
                         <td><span class="badge @badgeClass">@item.Status</span></td>

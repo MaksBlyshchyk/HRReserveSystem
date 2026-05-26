@@ -34,7 +34,7 @@
                 {
                     var badgeClass = HrOptions.FeedbackRecommendationBadge(item.Recommendation);
 
-                    <tr>
+                    <tr class="clickable-row" data-row-link="@Url.Action("Details", new { id = item.Id })" tabindex="0">
                         <td>@item.Interview?.Application?.Candidate?.FullName</td>
                         <td>@item.Interview?.Application?.Vacancy?.Title</td>
                         <td>@(item.Recruiter?.FullName ?? "Не вказано")</td>

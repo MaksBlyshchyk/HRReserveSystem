@@ -35,27 +35,9 @@
 }
 
 @functions {
-    private static string BuildDonutGradient(IReadOnlyDictionary<string, int> counts, IEnumerable<string> statuses, IReadOnlyDictionary<string, string> colors)
+    private static string FormatChartNumber(double value)
     {
-        var total = Math.Max(1, counts.Values.Sum());
-        var start = 0d;
-        var segments = new List<string>();
-
-        foreach (var status in statuses)
-        {
-            counts.TryGetValue(status, out var count);
-            if (count <= 0)
-            {
-                continue;
-            }
-
-            var end = start + (count * 360d / total);
-            var color = colors.TryGetValue(status, out var value) ? value : "#64748b";
-            segments.Add($"{color} {start.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}deg {end.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}deg");
-            start = end;
-        }
-
-        return segments.Count == 0 ? "#334155 0deg 360deg" : string.Join(", ", segments);
+        return value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
     }
 }
 
@@ -178,7 +160,42 @@
                 <a class="btn btn-sm btn-link" asp-controller="Applications" asp-action="Index">Усі</a>
             </div>
             <div class="card-body bento-chart-body">
-                <div class="donut-chart" style="--donut-gradient: @BuildDonutGradient(Model.ApplicationStatusCounts, HrOptions.ApplicationStatuses, applicationColors)">
+                <div class="donut-chart" aria-label="Заявки за статусами">
+                    <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+                        <g class="donut-segments" transform="rotate(-90 50 50)">
+                            @{
+                                var applicationOffset = 0d;
+                            }
+                            @foreach (var status in HrOptions.ApplicationStatuses)
+                            {
+                                var count = Model.ApplicationStatusCounts.TryGetValue(status, out var value) ? value : 0;
+                                if (count <= 0)
+                                {
+                                    continue;
+                                }
+
+                                var share = count * 100.0 / applicationTotal;
+                                var gap = Math.Max(0, 100.0 - share);
+                                var percent = (int)Math.Round(count * 100.0 / applicationTotal);
+                                var statusUrl = Url.Action("Index", "Applications", new { status });
+
+                                <a class="donut-segment-link" href="@statusUrl" aria-label="@($"{status}: {count} ({percent}%)")">
+                                    <circle class="donut-segment"
+                                            cx="50"
+                                            cy="50"
+                                            r="38"
+                                            pathLength="100"
+                                            stroke="@applicationColors[status]"
+                                            stroke-dasharray="@FormatChartNumber(share) @FormatChartNumber(gap)"
+                                            stroke-dashoffset="@FormatChartNumber(-applicationOffset)">
+                                        <title>@status: @count (@percent%)</title>
+                                    </circle>
+                                </a>
+
+                                applicationOffset += share;
+                            }
+                        </g>
+                    </svg>
                     <span>@Model.ApplicationCount</span>
                 </div>
                 <div class="status-legend">
@@ -190,12 +207,13 @@
                             continue;
                         }
                         var percent = (int)Math.Round(count * 100.0 / applicationTotal);
+                        var statusUrl = Url.Action("Index", "Applications", new { status });
 
-                        <div class="status-legend-row">
+                        <a class="status-legend-row" href="@statusUrl">
                             <span class="legend-dot" style="background:@applicationColors[status]"></span>
                             <span>@status</span>
                             <strong>@count (@percent%)</strong>
-                        </div>
+                        </a>
                     }
                 </div>
             </div>
@@ -271,7 +289,42 @@
                 <a class="btn btn-sm btn-link" asp-controller="Vacancies" asp-action="Index">Усі</a>
             </div>
             <div class="card-body bento-chart-body">
-                <div class="donut-chart donut-chart-small" style="--donut-gradient: @BuildDonutGradient(Model.VacancyStatusCounts, HrOptions.VacancyStatuses, vacancyColors)">
+                <div class="donut-chart donut-chart-small" aria-label="Вакансії за статусами">
+                    <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+                        <g class="donut-segments" transform="rotate(-90 50 50)">
+                            @{
+                                var vacancyOffset = 0d;
+                            }
+                            @foreach (var status in HrOptions.VacancyStatuses)
+                            {
+                                var count = Model.VacancyStatusCounts.TryGetValue(status, out var value) ? value : 0;
+                                if (count <= 0)
+                                {
+                                    continue;
+                                }
+
+                                var share = count * 100.0 / vacancyTotal;
+                                var gap = Math.Max(0, 100.0 - share);
+                                var percent = (int)Math.Round(count * 100.0 / vacancyTotal);
+                                var statusUrl = Url.Action("Index", "Vacancies", new { status });
+
+                                <a class="donut-segment-link" href="@statusUrl" aria-label="@($"{status}: {count} ({percent}%)")">
+                                    <circle class="donut-segment"
+                                            cx="50"
+                                            cy="50"
+                                            r="38"
+                                            pathLength="100"
+                                            stroke="@vacancyColors[status]"
+                                            stroke-dasharray="@FormatChartNumber(share) @FormatChartNumber(gap)"
+                                            stroke-dashoffset="@FormatChartNumber(-vacancyOffset)">
+                                        <title>@status: @count (@percent%)</title>
+                                    </circle>
+                                </a>
+
+                                vacancyOffset += share;
+                            }
+                        </g>
+                    </svg>
                     <span>@Model.VacancyCount</span>
                 </div>
                 <div class="status-legend">
@@ -279,12 +332,13 @@
                     {
                         var count = Model.VacancyStatusCounts.TryGetValue(status, out var value) ? value : 0;
                         var percent = (int)Math.Round(count * 100.0 / vacancyTotal);
+                        var statusUrl = Url.Action("Index", "Vacancies", new { status });
 
-                        <div class="status-legend-row">
+                        <a class="status-legend-row" href="@statusUrl">
                             <span class="legend-dot" style="background:@vacancyColors[status]"></span>
                             <span>@status</span>
                             <strong>@count (@percent%)</strong>
-                        </div>
+                        </a>
                     }
                 </div>
             </div>

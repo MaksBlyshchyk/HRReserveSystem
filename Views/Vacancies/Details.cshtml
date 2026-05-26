@@ -2,16 +2,31 @@
 
 @{
     ViewData["Title"] = "Деталі вакансії";
+    var isArchived = Model.IsArchived;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h2 mb-1">@Model.Title</h1>
         <span class="badge @HrOptions.VacancyStatusBadge(Model.Status)">@Model.Status</span>
+        @if (isArchived)
+        {
+            <span class="badge text-bg-warning text-dark">Архівна вакансія</span>
+        }
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-warning" asp-action="Edit" asp-route-id="@Model.Id">Редагувати</a>
-        <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
+        @if (isArchived)
+        {
+            <form asp-action="Restore" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-outline-success" type="submit">Відновити</button>
+            </form>
+            <a class="btn btn-secondary" asp-action="Index" asp-route-showArchived="true">Назад до архіву</a>
+        }
+        else
+        {
+            <a class="btn btn-warning" asp-action="Edit" asp-route-id="@Model.Id">Редагувати</a>
+            <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
+        }
     </div>
 </div>
 

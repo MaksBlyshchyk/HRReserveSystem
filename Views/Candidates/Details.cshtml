@@ -2,16 +2,33 @@
 
 @{
     ViewData["Title"] = "Деталі кандидата";
+    var isHidden = Model.IsDeleted;
     var averageSoftSkillScore = Model.SoftSkillAssessments.Any()
         ? Math.Round(Model.SoftSkillAssessments.Average(assessment => assessment.AverageScore), 1)
         : (double?)null;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h2 mb-0">@Model.FullName</h1>
+    <div>
+        <h1 class="h2 mb-1">@Model.FullName</h1>
+        @if (isHidden)
+        {
+            <span class="badge text-bg-warning text-dark">Прихований кандидат</span>
+        }
+    </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-warning" asp-action="Edit" asp-route-id="@Model.Id">Редагувати</a>
-        <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
+        @if (isHidden)
+        {
+            <form asp-action="Restore" asp-route-id="@Model.Id" method="post">
+                <button class="btn btn-outline-success" type="submit">Відновити</button>
+            </form>
+            <a class="btn btn-secondary" asp-action="Index" asp-route-showHidden="true">Назад до прихованих</a>
+        }
+        else
+        {
+            <a class="btn btn-warning" asp-action="Edit" asp-route-id="@Model.Id">Редагувати</a>
+            <a class="btn btn-secondary" asp-action="Index">Назад до списку</a>
+        }
     </div>
 </div>
 
@@ -44,13 +61,16 @@
                     <a class="btn btn-sm btn-outline-secondary" asp-action="DownloadResume" asp-route-id="@Model.Id">Завантажити</a>
                     <span class="text-muted ms-2">@Model.ResumeFilePath</span>
                 }
-                <form asp-action="UploadResume" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="mt-3">
-                    <div class="input-group">
-                        <input class="form-control" type="file" id="resumeFileDetails" name="resumeFile" accept=".pdf,.doc,.docx" />
-                        <button class="btn btn-outline-primary" type="submit">Оновити резюме</button>
-                    </div>
-                    <div class="form-text">Дозволені PDF, DOC або DOCX файли до 5 MB.</div>
-                </form>
+                @if (!isHidden)
+                {
+                    <form asp-action="UploadResume" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="mt-3">
+                        <div class="input-group">
+                            <input class="form-control" type="file" id="resumeFileDetails" name="resumeFile" accept=".pdf,.doc,.docx" />
+                            <button class="btn btn-outline-primary" type="submit">Оновити резюме</button>
+                        </div>
+                        <div class="form-text">Дозволені PDF, DOC або DOCX файли до 5 MB.</div>
+                    </form>
+                }
             </dd>
             <dt class="col-sm-3">Коротке резюме</dt>
             <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.ResumeSummary) ? "Не додано" : Model.ResumeSummary)</dd>

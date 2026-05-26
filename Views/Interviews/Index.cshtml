@@ -61,7 +61,7 @@
                 {
                     var badgeClass = HrOptions.InterviewResultBadge(item.Result);
 
-                    <tr>
+                    <tr class="clickable-row" data-row-link="@Url.Action("Details", new { id = item.Id })" tabindex="0">
                         <td>@item.Application?.Candidate?.FullName</td>
                         <td>@item.Application?.Vacancy?.Title</td>
                         <td>@(item.Recruiter?.FullName ?? "Не призначено")</td>

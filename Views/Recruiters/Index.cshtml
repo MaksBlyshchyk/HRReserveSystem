@@ -32,7 +32,7 @@
                 {
                     var badgeClass = HrOptions.RecruiterRoleBadge(item.Role);
 
-                    <tr>
+                    <tr class="clickable-row" data-row-link="@Url.Action("Details", new { id = item.Id })" tabindex="0">
                         <td class="fw-semibold">@item.FullName</td>
                         <td>@item.Email</td>
                         <td><code>@item.Login</code></td>
