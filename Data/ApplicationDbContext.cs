@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRReserveSystem.Data;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<IdentityUser, IdentityRole, string>(options)
+public class ApplicationDbContext(DbContextOptions options) : IdentityDbContext<IdentityUser, IdentityRole, string>(options)
 {
     public DbSet<Candidate> Candidates => Set<Candidate>();
 
@@ -45,7 +45,11 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .ToTable(table =>
             {
                 table.HasCheckConstraint("CK_Vacancies_Status", "\"Status\" IN ('Open','Paused','Closed')");
-                table.HasCheckConstraint("CK_Vacancies_SalaryRange", "CAST(\"SalaryMax\" AS REAL) >= CAST(\"SalaryMin\" AS REAL)");
+                table.HasCheckConstraint(
+                    "CK_Vacancies_SalaryRange",
+                    Database.IsSqlite()
+                        ? "CAST(\"SalaryMax\" AS REAL) >= CAST(\"SalaryMin\" AS REAL)"
+                        : "\"SalaryMax\" >= \"SalaryMin\"");
             });
 
         modelBuilder.Entity<Application>()
@@ -70,13 +74,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 table.HasCheckConstraint("CK_SoftSkillAssessments_Leadership", "\"Leadership\" BETWEEN 1 AND 10");
             });
 
-        modelBuilder.Entity<Vacancy>()
-            .Property(vacancy => vacancy.SalaryMin)
-            .HasColumnType("TEXT");
+        if (Database.IsSqlite())
+        {
+            modelBuilder.Entity<Vacancy>()
+                .Property(vacancy => vacancy.SalaryMin)
+                .HasColumnType("TEXT");
 
-        modelBuilder.Entity<Vacancy>()
-            .Property(vacancy => vacancy.SalaryMax)
-            .HasColumnType("TEXT");
+            modelBuilder.Entity<Vacancy>()
+                .Property(vacancy => vacancy.SalaryMax)
+                .HasColumnType("TEXT");
+        }
 
         modelBuilder.Entity<Interview>()
             .HasOne(interview => interview.Recruiter)

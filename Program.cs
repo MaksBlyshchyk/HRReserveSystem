@@ -12,8 +12,9 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 // Add services to the container.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+var databaseProvider = DatabaseConfiguration.GetProvider(builder.Configuration, builder.Environment);
+var connectionString = DatabaseConfiguration.GetConnectionString(builder.Configuration, databaseProvider);
+DatabaseConfiguration.ConfigureDbContext(builder.Services, databaseProvider, connectionString);
 builder.Services.AddScoped<DemoUserService>();
 builder.Services.AddScoped<IdentityRecruiterSyncService>();
 builder.Services.AddScoped<IPasswordHasher<Recruiter>, PasswordHasher<Recruiter>>();
