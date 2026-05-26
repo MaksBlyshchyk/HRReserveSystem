@@ -318,6 +318,50 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Feedback_Score_0_Does_Not_Pass()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+
+        var response = await PostFormAsync(client, "/InterviewFeedbacks/Create", new Dictionary<string, string>
+        {
+            ["InterviewId"] = "1",
+            ["Comment"] = "Score zero validation test.",
+            ["Score"] = "0",
+            ["Recommendation"] = "Hire"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.False(await db.InterviewFeedbacks.AnyAsync(feedback => feedback.Score == 0));
+    }
+
+    [Fact]
+    public async Task Feedback_Valid_Score_Passes()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+
+        var response = await PostFormAsync(client, "/InterviewFeedbacks/Create", new Dictionary<string, string>
+        {
+            ["InterviewId"] = "1",
+            ["Comment"] = "Valid feedback score integration test.",
+            ["Score"] = "10",
+            ["Recommendation"] = "Hire"
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.True(await db.InterviewFeedbacks.AnyAsync(feedback =>
+            feedback.Score == 10 &&
+            feedback.Comment == "Valid feedback score integration test."));
+    }
+
+    [Fact]
     public async Task Database_Rejects_Invalid_Feedback_Score()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -358,6 +402,34 @@ public class HrIntegrationTests
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         Assert.False(await db.SoftSkillAssessments.AnyAsync(assessment => assessment.Communication == 0 || assessment.Teamwork == 11));
+    }
+
+    [Fact]
+    public async Task SoftSkill_Valid_Scores_Pass()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+
+        var response = await PostFormAsync(client, "/SoftSkillAssessments/Create", new Dictionary<string, string>
+        {
+            ["CandidateId"] = "2",
+            ["Communication"] = "1",
+            ["Teamwork"] = "10",
+            ["Responsibility"] = "5",
+            ["StressResistance"] = "6",
+            ["Leadership"] = "7",
+            ["OverallComment"] = "Valid soft skills integration test."
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.True(await db.SoftSkillAssessments.AnyAsync(assessment =>
+            assessment.CandidateId == 2 &&
+            assessment.Communication == 1 &&
+            assessment.Teamwork == 10 &&
+            assessment.OverallComment == "Valid soft skills integration test."));
     }
 
     [Fact]
@@ -419,6 +491,22 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Api_Minimal_Endpoints_Return_Json()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "admin", "admin123");
+
+        foreach (var path in new[] { "/api/candidates", "/api/vacancies", "/api/applications", "/api/interviews", "/api/soft-skills" })
+        {
+            var response = await client.GetAsync(path);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        }
+    }
+
+    [Fact]
     public async Task Api_Forbidden_Role_Returns_403()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -446,6 +534,56 @@ public class HrIntegrationTests
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith("/uploads/resumes/", resumePath);
         Assert.EndsWith(Path.GetExtension(fileName), resumePath);
+    }
+
+    [Fact]
+    public async Task Hidden_Candidate_Can_Be_Restored_From_UI()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        var hideResponse = await PostFormAsync(client, "/Candidates/Delete/1", "/Candidates/Delete/1", []);
+        Assert.Equal(HttpStatusCode.Redirect, hideResponse.StatusCode);
+
+        var hiddenListResponse = await client.GetAsync("/Candidates?showHidden=true");
+        var hiddenListHtml = await hiddenListResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, hiddenListResponse.StatusCode);
+        Assert.Contains("olena.koval@example.com", hiddenListHtml);
+        Assert.Contains("Відновити", hiddenListHtml);
+
+        var restoreResponse = await PostFormAsync(client, "/Candidates?showHidden=true", "/Candidates/Restore/1", []);
+        Assert.Equal(HttpStatusCode.Redirect, restoreResponse.StatusCode);
+
+        var activeListResponse = await client.GetAsync("/Candidates");
+        var activeListHtml = await activeListResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, activeListResponse.StatusCode);
+        Assert.Contains("olena.koval@example.com", activeListHtml);
+    }
+
+    [Fact]
+    public async Task Archived_Vacancy_Can_Be_Restored_From_UI()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        var archiveResponse = await PostFormAsync(client, "/Vacancies/Delete/1", "/Vacancies/Delete/1", []);
+        Assert.Equal(HttpStatusCode.Redirect, archiveResponse.StatusCode);
+
+        var archiveListResponse = await client.GetAsync("/Vacancies?showArchived=true");
+        var archiveListHtml = await archiveListResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, archiveListResponse.StatusCode);
+        Assert.Contains("Junior .NET Developer", archiveListHtml);
+        Assert.Contains("Відновити", archiveListHtml);
+
+        var restoreResponse = await PostFormAsync(client, "/Vacancies?showArchived=true", "/Vacancies/Restore/1", []);
+        Assert.Equal(HttpStatusCode.Redirect, restoreResponse.StatusCode);
+
+        var activeListResponse = await client.GetAsync("/Vacancies");
+        var activeListHtml = await activeListResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, activeListResponse.StatusCode);
+        Assert.Contains("Junior .NET Developer", activeListHtml);
     }
 
     private static async Task<InterviewPostData> GetNewInterviewPostDataAsync(HrReserveWebApplicationFactory factory)
@@ -527,6 +665,12 @@ public class HrIntegrationTests
     {
         fields["__RequestVerificationToken"] = await GetAntiforgeryTokenAsync(client, path);
         return await client.PostAsync(path, new FormUrlEncodedContent(fields));
+    }
+
+    private static async Task<HttpResponseMessage> PostFormAsync(HttpClient client, string tokenPath, string postPath, Dictionary<string, string> fields)
+    {
+        fields["__RequestVerificationToken"] = await GetAntiforgeryTokenAsync(client, tokenPath);
+        return await client.PostAsync(postPath, new FormUrlEncodedContent(fields));
     }
 
     private static async Task<HttpResponseMessage> UploadResumeAsync(HttpClient client, string path, string fileName, byte[] bytes)
