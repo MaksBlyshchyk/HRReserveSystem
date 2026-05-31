@@ -1,0 +1,55 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__Provider: PostgreSQL
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-hrreserve};Username=${POSTGRES_USER:-hrreserve};Password=${POSTGRES_PASSWORD:-change-me};Include Error Detail=false"
+      Email__Enabled: "${EMAIL_ENABLED:-false}"
+      Email__Host: "${EMAIL_HOST:-}"
+      Email__Port: "${EMAIL_PORT:-587}"
+      Email__UseSsl: "${EMAIL_USE_SSL:-true}"
+      Email__UserName: "${EMAIL_USERNAME:-}"
+      Email__Password: "${EMAIL_PASSWORD:-}"
+      Email__FromEmail: "${EMAIL_FROM_EMAIL:-no-reply@hrreserve.local}"
+      Email__FromName: "${EMAIL_FROM_NAME:-HR Reserve System}"
+      Email__RedirectAllTo: "${EMAIL_REDIRECT_ALL_TO:-}"
+    volumes:
+      - data-protection-keys:/app/DataProtectionKeys
+      - email-outbox:/app/EmailOutbox
+      - uploaded-resumes:/app/wwwroot/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/live >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-hrreserve}"
+      POSTGRES_USER: "${POSTGRES_USER:-hrreserve}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-change-me}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hrreserve} -d ${POSTGRES_DB:-hrreserve}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  data-protection-keys:
+  email-outbox:
+  uploaded-resumes:

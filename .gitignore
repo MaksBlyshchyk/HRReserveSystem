@@ -16,5 +16,6 @@ wwwroot/uploads/
 *.log
 .env
 .env.*
+!.env.example
 appsettings.Local.json
 appsettings.*.local.json

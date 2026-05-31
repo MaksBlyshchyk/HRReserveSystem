@@ -178,3 +178,18 @@ DTO не містять паролів або password hash.
 - Файли резюме зберігаються локально у `wwwroot/uploads/resumes`; хмарне сховище не використовується.
 - Email-сповіщення за замовчуванням працюють через локальний `EmailOutbox`; реальна SMTP-відправка не запускається автоматично і потребує окремої конфігурації.
 - Публічна реєстрація, reset password і підтвердження email не реалізовані.
+
+## Production / Docker
+
+Локальний запуск за замовчуванням використовує SQLite. Для production і Docker використовуйте PostgreSQL через `Database__Provider=PostgreSQL` та `ConnectionStrings__DefaultConnection` або `DATABASE_URL`.
+
+```bash
+docker compose up --build
+```
+
+Приклад змінних середовища є у `.env.example`. Детальні інструкції з deployment, health checks і логування описані в `DEPLOYMENT.md`.
+
+Health endpoints:
+
+- `/health/live`
+- `/health/ready`

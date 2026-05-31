@@ -16,7 +16,7 @@ public static class DatabaseConfiguration
             return NormalizeProvider(provider);
         }
 
-        return environment.IsProduction() ? PostgresProvider : SqliteProvider;
+        return SqliteProvider;
     }
 
     public static string GetConnectionString(IConfiguration configuration, string provider)
@@ -61,7 +61,19 @@ public static class DatabaseConfiguration
 
     private static string NormalizeProvider(string provider)
     {
-        return IsPostgres(provider) ? PostgresProvider : SqliteProvider;
+        if (IsPostgres(provider))
+        {
+            return PostgresProvider;
+        }
+
+        if (provider.Equals(SqliteProvider, StringComparison.OrdinalIgnoreCase)
+            || provider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            return SqliteProvider;
+        }
+
+        throw new InvalidOperationException(
+            $"Unsupported database provider '{provider}'. Use '{SqliteProvider}' or '{PostgresProvider}'.");
     }
 
     private static string ConvertDatabaseUrl(string databaseUrl)

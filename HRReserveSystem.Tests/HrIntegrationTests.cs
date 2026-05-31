@@ -2,14 +2,28 @@ using System.Net;
 using System.Text.RegularExpressions;
 using HRReserveSystem.Data;
 using HRReserveSystem.Models;
+using HRReserveSystem.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 
 namespace HRReserveSystem.Tests;
 
 public class HrIntegrationTests
 {
+    private sealed class StubEnvironment : IWebHostEnvironment
+    {
+        public string ApplicationName { get; set; } = "HRReserveSystem.Tests";
+        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+        public string WebRootPath { get; set; } = string.Empty;
+        public string EnvironmentName { get; set; } = "Production";
+        public string ContentRootPath { get; set; } = string.Empty;
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+    }
+
     private sealed record InterviewPostData(
         int InterviewId,
         int ApplicationId,
@@ -20,6 +34,37 @@ public class HrIntegrationTests
         string? RecruiterEmail);
 
     [Fact]
+    public void DatabaseConfiguration_Defaults_To_Sqlite()
+    {
+        var configuration = new ConfigurationBuilder().Build();
+
+        var provider = DatabaseConfiguration.GetProvider(configuration, new StubEnvironment());
+
+        Assert.Equal(DatabaseConfiguration.SqliteProvider, provider);
+    }
+
+    [Fact]
+    public void DatabaseConfiguration_Uses_Postgres_DatabaseUrl()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Database:Provider"] = "PostgreSQL",
+                ["DATABASE_URL"] = "postgres://hr_user:secret@postgres:5432/hrreserve"
+            })
+            .Build();
+
+        var provider = DatabaseConfiguration.GetProvider(configuration, new StubEnvironment());
+        var connectionString = DatabaseConfiguration.GetConnectionString(configuration, provider);
+
+        Assert.Equal(DatabaseConfiguration.PostgresProvider, provider);
+        Assert.Contains("Host=postgres", connectionString);
+        Assert.Contains("Database=hrreserve", connectionString);
+        Assert.Contains("Username=hr_user", connectionString);
+        Assert.Contains("Password=secret", connectionString);
+    }
+
+    [Fact]
     public async Task Project_Starts_And_Login_Page_Loads()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -28,6 +73,33 @@ public class HrIntegrationTests
         var response = await client.GetAsync("/Account/Login");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/health/live")]
+    [InlineData("/health/ready")]
+    public async Task Health_Endpoints_Are_Available_Without_Login(string path)
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Error_Page_Does_Not_Show_Development_Instructions()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+
+        var response = await client.GetAsync("/Home/Error?statusCode=500");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Request ID", html);
+        Assert.DoesNotContain("Development environment", html);
     }
 
     [Fact]
