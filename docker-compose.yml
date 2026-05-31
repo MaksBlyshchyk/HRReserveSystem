@@ -6,18 +6,20 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      Database__Provider: PostgreSQL
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      DATABASE_PROVIDER: "${DATABASE_PROVIDER:-PostgreSQL}"
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-hrreserve};Username=${POSTGRES_USER:-hrreserve};Password=${POSTGRES_PASSWORD:-change-me};Include Error Detail=false"
-      Email__Enabled: "${EMAIL_ENABLED:-false}"
-      Email__Host: "${EMAIL_HOST:-}"
-      Email__Port: "${EMAIL_PORT:-587}"
+      Security__UseHttpsRedirection: "${SECURITY_USE_HTTPS_REDIRECTION:-false}"
+      Security__CookieSecurePolicy: "${SECURITY_COOKIE_SECURE_POLICY:-SameAsRequest}"
+      Email__Enabled: "${Email__Enabled:-false}"
+      Email__Host: "${Email__Host:-}"
+      Email__Port: "${Email__Port:-587}"
       Email__UseSsl: "${EMAIL_USE_SSL:-true}"
-      Email__UserName: "${EMAIL_USERNAME:-}"
-      Email__Password: "${EMAIL_PASSWORD:-}"
-      Email__FromEmail: "${EMAIL_FROM_EMAIL:-no-reply@hrreserve.local}"
-      Email__FromName: "${EMAIL_FROM_NAME:-HR Reserve System}"
-      Email__RedirectAllTo: "${EMAIL_REDIRECT_ALL_TO:-}"
+      Email__UserName: "${Email__UserName:-}"
+      Email__Password: "${Email__Password:-}"
+      Email__FromEmail: "${Email__FromEmail:-no-reply@example.com}"
+      Email__FromName: "${Email__FromName:-HR Reserve System}"
+      Email__RedirectAllTo: "${Email__RedirectAllTo:-}"
     volumes:
       - data-protection-keys:/app/DataProtectionKeys
       - email-outbox:/app/EmailOutbox
@@ -25,12 +27,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/live >/dev/null 2>&1 || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
     restart: unless-stopped
 
   postgres:

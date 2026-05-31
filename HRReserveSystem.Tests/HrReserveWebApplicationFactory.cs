@@ -11,7 +11,13 @@ namespace HRReserveSystem.Tests;
 internal sealed class HrReserveWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string tempDirectory = Path.Combine(Path.GetTempPath(), $"HRReserveSystem.Tests-{Guid.NewGuid():N}");
+    private readonly IReadOnlyDictionary<string, string?> configurationOverrides;
     private string TestConnectionString => $"Data Source={Path.Combine(tempDirectory, "hrreserve-test.db")}";
+
+    public HrReserveWebApplicationFactory(IReadOnlyDictionary<string, string?>? configurationOverrides = null)
+    {
+        this.configurationOverrides = configurationOverrides ?? new Dictionary<string, string?>();
+    }
 
     public string OutboxPath => Path.Combine(tempDirectory, "EmailOutbox");
 
@@ -22,13 +28,20 @@ internal sealed class HrReserveWebApplicationFactory : WebApplicationFactory<Pro
         builder.UseEnvironment("Development");
         builder.ConfigureAppConfiguration((_, configuration) =>
         {
-            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            var testConfiguration = new Dictionary<string, string?>
             {
                 ["Database:Provider"] = "SQLite",
                 ["ConnectionStrings:DefaultConnection"] = TestConnectionString,
                 ["Email:Enabled"] = "false",
                 ["Email:OutboxPath"] = OutboxPath
-            });
+            };
+
+            foreach (var item in configurationOverrides)
+            {
+                testConfiguration[item.Key] = item.Value;
+            }
+
+            configuration.AddInMemoryCollection(testConfiguration);
         });
         builder.ConfigureTestServices(services =>
         {

@@ -13,6 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
+var useHttpsRedirection = builder.Configuration.GetValue<bool?>("Security:UseHttpsRedirection")
+    ?? !builder.Environment.IsDevelopment();
+var cookieSecurePolicy = builder.Environment.IsDevelopment()
+    ? CookieSecurePolicy.SameAsRequest
+    : CookieSecurePolicy.Always;
+if (Enum.TryParse<CookieSecurePolicy>(builder.Configuration["Security:CookieSecurePolicy"], ignoreCase: true, out var configuredCookieSecurePolicy))
+{
+    cookieSecurePolicy = configuredCookieSecurePolicy;
+}
 builder.Services.AddHttpLogging(options =>
 {
     options.LoggingFields = HttpLoggingFields.RequestMethod
@@ -54,6 +63,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.Cookie.Name = "HRReserveSystem.Identity";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = cookieSecurePolicy;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Events.OnRedirectToLogin = context =>
     {
         if (context.Request.Path.StartsWithSegments("/api"))
@@ -101,6 +113,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseExceptionHandler("/Home/Error");
     app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
+}
+if (useHttpsRedirection)
+{
+    app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
 

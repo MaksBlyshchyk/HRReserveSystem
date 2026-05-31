@@ -1,22 +1,58 @@
 # HRReserveSystem
 
-Курсовий проєкт за варіантом №26: **Система управління кадровим резервом (HR-система)**.
+Курсовий проєкт за варіантом №26: **система управління кадровим резервом (HR-система)**.
 
-HRReserveSystem - це ASP.NET Core MVC застосунок для рекрутерів, адміністраторів та інтерв'юерів. Система веде базу кандидатів, резюме, вакансій, заявок на вакансії, співбесід, відгуків інтерв'юерів і оцінок soft skills.
+HRReserveSystem - це ASP.NET Core MVC застосунок для демонстрації роботи рекрутингової системи. Він веде кандидатів, резюме, вакансії, заявки на вакансії, співбесіди, відгуки інтерв'юерів, оцінки soft skills і ролі користувачів.
 
-## Стек технологій
+## Стек
 
 - .NET 8
-- ASP.NET Core MVC і Razor Views
-- ASP.NET Core Identity з cookie authentication
+- ASP.NET Core MVC, Razor Views
+- ASP.NET Core Identity, cookie authentication
 - Entity Framework Core 8
-- SQLite
+- SQLite для локального демо
+- PostgreSQL як production-провайдер через конфігурацію
 - Bootstrap, jQuery validation
 - xUnit integration tests
+- Docker / Docker Compose
 
-Проєкт залишається MVC-застосунком. Angular, React і Clean Architecture не використовуються.
+Проєкт залишається MVC-застосунком. Angular, React і повна перебудова архітектури не використовуються.
 
-## Запуск проєкту
+## Функціонал
+
+- Dashboard з HR-показниками.
+- Кандидати: CRUD, пошук, фільтр за досвідом, CSV export, soft delete, відновлення.
+- Резюме: upload PDF/DOC/DOCX до 5 MB, збереження під GUID-назвою, download тільки з `wwwroot/uploads/resumes`.
+- Вакансії: CRUD, статуси `Open`, `Paused`, `Closed`, архівація і відновлення.
+- Заявки: зв'язок кандидат + вакансія, pipeline-статуси `New`, `Screening`, `Interview`, `TestTask`, `Offer`, `Hired`, `Rejected`.
+- Співбесіди: дата, тип, результат, відповідальний рекрутер, `.ics` export, Google Calendar link.
+- Email/Outbox: повідомлення після створення або редагування співбесіди.
+- Відгуки інтерв'юерів: коментар, рекомендація, оцінка 1-10.
+- Soft skills: 5 оцінок 1-10 і середній бал.
+- REST API: `/api/candidates`, `/api/vacancies`, `/api/applications`, `/api/interviews`, `/api/soft-skills`.
+- Health checks: `/health/live`, `/health/ready`.
+
+## Ролі
+
+| Роль | Доступ |
+| --- | --- |
+| `Admin` | Повний доступ до кандидатів, вакансій, заявок, співбесід, відгуків, soft skills і рекрутерів. |
+| `Recruiter` | Кандидати, вакансії, заявки, співбесіди. |
+| `Interviewer` | Співбесіди, відгуки, soft skills. |
+
+Неавторизований користувач може відкрити сторінку входу та інформаційні сторінки. API без авторизації повертає `401`, а користувач без потрібної ролі - `403`.
+
+## Демо-акаунти
+
+| Login | Password | Role |
+| --- | --- | --- |
+| `admin` | `admin123` | Admin |
+| `recruiter` | `recruiter123` | Recruiter |
+| `interviewer` | `interviewer123` | Interviewer |
+
+Демо-паролі потрібні тільки для навчального сценарію. У моделі `Recruiter` зберігається `PasswordHash`, відкриті паролі в БД не зберігаються.
+
+## Локальний запуск
 
 ```bash
 dotnet restore
@@ -24,146 +60,75 @@ dotnet build
 dotnet run
 ```
 
-Після запуску відкрийте URL з консолі, зазвичай `http://localhost:5000` або адресу з `Properties/launchSettings.json`.
+За замовчуванням використовується SQLite:
 
-SQLite база створюється автоматично. У `Program.cs` виконується `Database.Migrate()`, тому міграції застосовуються під час старту застосунку.
-
-## Міграції
-
-```bash
-dotnet ef migrations add НазваМіграції
-dotnet ef database update
+```json
+"Database": {
+  "Provider": "SQLite"
+}
 ```
 
-Для фінального hardening-етапу використовується міграція `HardeningConstraints`.
+SQLite-файл `hrreserve.db` створюється локально і не комітиться. У `Program.cs` виконується `Database.Migrate()`, тому міграції застосовуються під час старту застосунку.
 
-## Email-сповіщення
-
-Email-сповіщення про створення або редагування співбесіди реалізовані у простому навчальному режимі. За замовчуванням `Email:Enabled=false`, тому реальні листи не надсилаються, а текст повідомлення зберігається як `.txt` файл у папці `EmailOutbox`.
-
-SMTP-відправка є опційною. Щоб надсилати реальні листи, потрібно налаштувати секцію `Email` в `appsettings.json` або user secrets: `Enabled`, `Host`, `Port`, `UseSsl`, `UserName`, `Password`, `FromEmail`, `FromName`. Поле `RedirectAllTo` можна заповнити тестовою адресою, щоб усі demo-листи йшли тільки на неї.
-
-Якщо SMTP не налаштований, вимкнений або недоступний, система не має падати: повідомлення буде записане в `EmailOutbox`.
-
-## Ролі та доступи
-
-| Роль | Доступ |
-| --- | --- |
-| `Admin` | Повний доступ до кандидатів, вакансій, заявок, співбесід, відгуків, soft skills і користувачів-рекрутерів. |
-| `Recruiter` | Кандидати, вакансії, заявки, співбесіди. |
-| `Interviewer` | Співбесіди, відгуки інтерв'юерів, оцінки soft skills. |
-
-CRUD-сторінки захищені атрибутами `[Authorize]`. Неавторизований користувач може відкрити сторінку входу та інформаційні сторінки.
-
-## Демо-акаунти
-
-| Login | Demo password | Role |
-| --- | --- | --- |
-| `admin` | `admin123` | Admin |
-| `recruiter` | `recruiter123` | Recruiter |
-| `interviewer` | `interviewer123` | Interviewer |
-
-Демо-паролі потрібні тільки для навчального/demo-сценарію. Вони описані в `Services/DemoCredentials.cs`, використовуються для seed/demo-входу і не зберігаються в БД у відкритому вигляді.
-
-У поточному source модель `Recruiter` використовує поле `PasswordHash`. Поля `Recruiter.Password` у предметній моделі немає. Auth flow такий: `DemoUserService` знаходить рекрутера за логіном або email, перевіряє введений пароль через `IPasswordHasher<Recruiter>` / `PasswordHasher<Recruiter>.VerifyHashedPassword`, після чого `AccountController` виконує sign-in через ASP.NET Core Identity, щоб зберегти ролі та claims у cookie.
-
-## Реалізовані модулі
-
-- Dashboard з основними HR-показниками.
-- Кандидати: база кандидатів, пошук, фільтр за досвідом, CSV-експорт, перегляд деталей.
-- Резюме: локальне завантаження PDF/DOC/DOCX до 5 MB, безпечна назва файлу через `Guid`, шлях у `ResumeFilePath`, відкриття резюме зі сторінки кандидата.
-- Вакансії: опис, вимоги, зарплатний діапазон, статуси `Open`, `Paused`, `Closed`.
-- Заявки: зв'язок кандидат-вакансія, етапи відбору `New`, `Screening`, `Interview`, `TestTask`, `Offer`, `Hired`, `Rejected`.
-- Співбесіди: дата, тип, результат, відповідальний рекрутер, календар, `.ics` export, перехід до Google Calendar і email/outbox-сповіщення після створення або редагування.
-- Відгуки інтерв'юерів: коментар, рекомендація, оцінка від 1 до 10.
-- Soft skills: оцінки комунікації, командної роботи, відповідальності, стресостійкості та лідерства від 1 до 10.
-- Рекрутери: адміністрування користувачів і ролей `Admin`, `Recruiter`, `Interviewer`.
-- REST API як додатковий шар до MVC: `/api/candidates`, `/api/vacancies`, `/api/applications`, `/api/interviews`, `/api/soft-skills`.
-
-Приховування кандидатів і архівування вакансій не видаляє записи фізично. Кандидат отримує `IsDeleted=true`, вакансія отримує `IsArchived=true`. У списках є окремі режими `Приховані кандидати` і `Архів вакансій`, де запис можна переглянути та відновити кнопкою `Відновити`.
-
-## Відповідність варіанту №26
-
-| Вимога | Реалізація |
-| --- | --- |
-| База кандидатів | `CandidatesController`, модель `Candidate`, таблиця `Candidates`. |
-| База резюме | `ResumeFilePath`, upload PDF/DOC/DOCX, перегляд резюме в Details. |
-| Вакансії | `VacanciesController`, модель `Vacancy`, статуси вакансій. |
-| Етапи відбору | `ApplicationsController`, статус заявки як етап pipeline. |
-| Історія співбесід | `InterviewsController`, зв'язок зі заявками. |
-| Відгуки інтерв'юерів | `InterviewFeedbacksController`, оцінка і рекомендація. |
-| Оцінка soft skills | `SoftSkillAssessmentsController`, 5 оцінок і середній бал. |
-| Статуси вакансій | `Open`, `Paused`, `Closed` із валідацією і DB constraint. |
-| Ролі | `Admin`, `Recruiter`, `Interviewer` через ASP.NET Core Identity. |
-
-## Посилення даних і безпеки
-
-- Паролі рекрутерів зберігаються як `PasswordHash`; відкриті паролі в таблиці `Recruiters` не зберігаються.
-- Logout виконується тільки через POST із `[ValidateAntiForgeryToken]`.
-- У БД додано унікальні індекси для email/login і пари `CandidateId + VacancyId`.
-- У БД додано check constraints для статусів, оцінок 1-10 і `SalaryMax >= SalaryMin`.
-- Resume upload приймає PDF/DOC/DOCX до 5 MB, зберігає файл під назвою на основі `Guid` і показує резюме зі сторінки кандидата.
-- Для кандидатів використовується soft delete через `IsDeleted`.
-- Для вакансій використовується архівація через `IsArchived`.
-- Приховані/архівні записи приховуються зі списків за замовчуванням, але доступні через окремі кнопки у списках і можуть бути відновлені.
-- Форми мають `ValidationSummary`, `asp-validation-for` і зрозумілі українські повідомлення.
-
-SQLite у цьому проєкті зберігає `decimal` зарплати як `TEXT`, що є типовим компромісом EF Core для SQLite. Constraint для зарплати використовує числове приведення, але для production краще зберігати зарплату як integer у копійках/центах.
-
-## Seed data
-
-Якщо HR-таблиці порожні, система додає:
-
-- 3 демо-користувачі;
-- 5 кандидатів;
-- 3 вакансії;
-- 5 заявок;
-- 3 співбесіди;
-- 3 відгуки;
-- 3 оцінки soft skills.
-
-Якщо база вже містить HR-дані, seed не дублює записи, а нормалізує старі статуси та гарантує наявність демо-користувачів.
-
-## Тести та CI
-
-Локальна перевірка:
+## Запуск тестів
 
 ```bash
 dotnet clean
 dotnet restore
 dotnet build
 dotnet test
-dotnet ef migrations list
-dotnet ef migrations has-pending-model-changes
 ```
 
-Інтеграційні тести xUnit перевіряють login, ролі, обмеження БД, resume upload, API-відповіді, JSON endpoints, базові CRUD-сценарії, відновлення прихованих кандидатів/архівних вакансій та створення `EmailOutbox`-повідомлень після створення/редагування співбесіди. GitHub Actions workflow `.github/workflows/ci.yml` запускається для `main` і виконує:
+Integration tests перевіряють login, ролі, candidates, duplicate email, duplicate application `CandidateId + VacancyId`, score range, resume upload, API DTO без password fields, health endpoints та EmailOutbox fallback.
 
-- `dotnet restore`
-- `dotnet build --configuration Release`
-- `dotnet test --configuration Release`
+## Upload Резюме
 
-## Ручна перевірка
+Ручна перевірка:
 
-1. Відкрити `/Account/Login`.
-2. Увійти як `admin / admin123`, перевірити Dashboard і розділ `Recruiters`.
-3. Вийти через кнопку `Вийти`; logout має відправити POST-форму.
-4. Увійти як `recruiter / recruiter123`, перевірити доступ до кандидатів, вакансій, заявок і співбесід.
-5. Переконатися, що `Recruiter` не має доступу до `/Recruiters`.
-6. Увійти як `interviewer / interviewer123`, перевірити доступ до співбесід, відгуків і soft skills.
-7. Переконатися, що `Interviewer` не має доступу до `/Candidates`.
-8. Створити кандидата з PDF/DOC/DOCX резюме до 5 MB.
-9. Спробувати завантажити `.exe` як резюме і перевірити повідомлення про неправильний формат.
-10. Приховати кандидата, перейти в `Приховані кандидати`, відкрити деталі й натиснути `Відновити`.
-11. Архівувати вакансію, перейти в `Архів вакансій`, відкрити деталі й натиснути `Відновити`.
-12. Створити вакансію і перевірити, що `SalaryMax < SalaryMin` не проходить.
-13. Створити заявку кандидат-вакансія і перевірити, що дубльована пара не проходить.
-14. Створити або відредагувати співбесіду і перевірити, що в папці `EmailOutbox` з'явився `.txt` файл із кандидатом, вакансією, датою, типом співбесіди і відповідальним.
-15. Створити feedback і soft skills; оцінки поза діапазоном 1-10 мають блокуватися.
+1. Увійти як `recruiter / recruiter123`.
+2. Відкрити кандидата або створити нового кандидата.
+3. Завантажити `.pdf`, `.doc` або `.docx` до 5 MB.
+4. Переконатися, що файл відкривається зі сторінки кандидата.
+5. Спробувати `.exe` або файл понад 5 MB - система має відхилити upload.
 
-## Перевірка REST API
+Безпека upload:
 
-API використовує ту саму cookie-авторизацію, що й MVC. Неавторизований запит до `/api/*` має повертати `401`, а користувач без потрібної ролі - `403`. Після входу через браузер можна перевірити JSON-відповіді:
+- дозволені тільки PDF/DOC/DOCX;
+- максимальний розмір - 5 MB;
+- ім'я файлу генерується через `Guid`;
+- posted `ResumeFilePath` ігнорується;
+- download працює тільки для шляхів `/uploads/resumes/...`;
+- `wwwroot/uploads/` не комітиться.
+
+## Email І EmailOutbox
+
+За замовчуванням `Email:Enabled=false`, тому реальні листи не надсилаються. Повідомлення зберігається як `.txt` у `EmailOutbox`.
+
+SMTP можна налаштувати через `appsettings`, user secrets або environment variables:
+
+```bash
+Email__Enabled=true
+Email__Host=smtp.example.com
+Email__Port=587
+Email__UserName=mailer@example.com
+Email__Password=change-me
+Email__FromEmail=no-reply@example.com
+Email__FromName="HR Reserve System"
+```
+
+Для QA можна вказати:
+
+```bash
+Email__RedirectAllTo=qa@example.com
+```
+
+Тоді всі повідомлення підуть на одну тестову адресу. `EmailOutbox/` не комітиться.
+
+## API
+
+API використовує ту саму cookie-авторизацію, що й MVC.
+
+Після входу через браузер можна перевірити:
 
 - `/api/candidates`
 - `/api/vacancies`
@@ -171,25 +136,40 @@ API використовує ту саму cookie-авторизацію, що �
 - `/api/interviews`
 - `/api/soft-skills`
 
-DTO не містять паролів або password hash.
+DTO не містять `Password`, `PasswordHash` або інших password fields.
 
-## Відомі обмеження
-
-- Файли резюме зберігаються локально у `wwwroot/uploads/resumes`; хмарне сховище не використовується.
-- Email-сповіщення за замовчуванням працюють через локальний `EmailOutbox`; реальна SMTP-відправка не запускається автоматично і потребує окремої конфігурації.
-- Публічна реєстрація, reset password і підтвердження email не реалізовані.
-
-## Production / Docker
-
-Локальний запуск за замовчуванням використовує SQLite. Для production і Docker використовуйте PostgreSQL через `Database__Provider=PostgreSQL` та `ConnectionStrings__DefaultConnection` або `DATABASE_URL`.
+## Docker
 
 ```bash
-docker compose up --build
+docker compose build
+docker compose up
 ```
 
-Приклад змінних середовища є у `.env.example`. Детальні інструкції з deployment, health checks і логування описані в `DEPLOYMENT.md`.
+Docker Compose запускає:
 
-Health endpoints:
+- web app;
+- PostgreSQL.
 
-- `/health/live`
-- `/health/ready`
+У compose для локального HTTP-демо вимкнено HTTPS redirect і cookie secure policy переведено в `SameAsRequest`. Для реального production розміщення використовуйте TLS termination/reverse proxy і production defaults. Деталі: `DEPLOYMENT.md`.
+
+## Health Checks
+
+- `/health/live` - застосунок запущений;
+- `/health/ready` - застосунок може підключитися до БД.
+
+## CI
+
+GitHub Actions workflow `.github/workflows/ci.yml` виконує:
+
+- `dotnet restore`
+- `dotnet build --configuration Release --no-restore`
+- `dotnet test --configuration Release --no-build`
+- `docker build`
+
+## Known Limitations
+
+- Це production-ready MVP для демонстрації, не повна enterprise HR-платформа.
+- Публічна реєстрація, reset password і підтвердження email не реалізовані.
+- Файли резюме зберігаються локально, хмарне сховище не підключене.
+- PostgreSQL підтримується як production-провайдер через окремий `PostgresApplicationDbContext` і PostgreSQL migrations у `Migrations/Postgres`; перед реальним production запуском треба перевірити міграції на staging БД і зробити backup.
+- SQLite зберігає salary decimal як `TEXT`, це локальний компроміс для демо.

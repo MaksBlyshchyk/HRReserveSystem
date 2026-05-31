@@ -27,5 +27,4 @@
     <EmbeddedResource Remove="HRReserveSystem.Tests\**\*" />
     <None Remove="HRReserveSystem.Tests\**\*" />
   </ItemGroup>
-
 </Project>

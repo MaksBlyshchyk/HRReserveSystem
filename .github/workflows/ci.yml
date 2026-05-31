@@ -29,3 +29,6 @@ jobs:
 
       - name: Test
         run: dotnet test --configuration Release --no-build
+
+      - name: Docker build
+        run: docker build -t hrreserve-system:ci .

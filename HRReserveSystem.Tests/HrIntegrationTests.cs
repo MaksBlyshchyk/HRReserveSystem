@@ -369,6 +369,33 @@ public class HrIntegrationTests
     }
 
     [Fact]
+    public async Task Email_RedirectAllTo_Rewrites_Outbox_Recipient()
+    {
+        using var factory = new HrReserveWebApplicationFactory(new Dictionary<string, string?>
+        {
+            ["Email:RedirectAllTo"] = "qa-check@example.com"
+        });
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+        var interviewData = await GetNewInterviewPostDataAsync(factory);
+
+        var response = await PostFormAsync(client, "/Interviews/Create", new Dictionary<string, string>
+        {
+            ["ApplicationId"] = interviewData.ApplicationId.ToString(),
+            ["RecruiterId"] = interviewData.RecruiterId?.ToString() ?? string.Empty,
+            ["InterviewDate"] = new DateTime(2031, 8, 5, 9, 15, 0).ToString("yyyy-MM-ddTHH:mm"),
+            ["InterviewType"] = "HR",
+            ["Result"] = "Pending",
+            ["Notes"] = "Redirect recipient integration test."
+        });
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var message = AssertSingleOutboxMessage(factory);
+        Assert.Contains("To: qa-check@example.com", message);
+        Assert.Contains(interviewData.CandidateEmail, message);
+    }
+
+    [Fact]
     public async Task Feedback_Score_11_Does_Not_Pass()
     {
         using var factory = new HrReserveWebApplicationFactory();
@@ -606,6 +633,28 @@ public class HrIntegrationTests
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.StartsWith("/uploads/resumes/", resumePath);
         Assert.EndsWith(Path.GetExtension(fileName), resumePath);
+        Assert.Matches(@"^/uploads/resumes/[0-9a-f]{32}\.(pdf|doc|docx)$", resumePath);
+        Assert.DoesNotContain(fileName, resumePath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Download_Resume_Does_Not_Allow_Path_Traversal()
+    {
+        using var factory = new HrReserveWebApplicationFactory();
+        using var client = CreateClient(factory);
+        await LoginAsync(client, "recruiter", "recruiter123");
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var candidate = await db.Candidates.FirstAsync(candidate => candidate.Id == 1);
+            candidate.ResumeFilePath = "/uploads/resumes/../../appsettings.json";
+            await db.SaveChangesAsync();
+        }
+
+        var response = await client.GetAsync("/Candidates/DownloadResume/1");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

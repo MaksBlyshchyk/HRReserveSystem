@@ -1,84 +1,145 @@
-# Deployment
+# DEPLOYMENT
 
-## Production Configuration
+Коротка інструкція для запуску HRReserveSystem як production-ready MVP.
 
-Local development uses SQLite by default:
+## Локальний запуск
 
 ```bash
+dotnet restore
+dotnet build
 dotnet run
 ```
 
-Production and Docker deployments should use PostgreSQL:
+Локально використовується SQLite з `appsettings.json`:
 
 ```bash
-Database__Provider=PostgreSQL
-ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=hrreserve;Username=hrreserve;Password=change-me;Include Error Detail=false"
-ASPNETCORE_ENVIRONMENT=Production
+DATABASE_PROVIDER=SQLite
+ConnectionStrings__DefaultConnection="Data Source=hrreserve.db"
 ```
 
-`DATABASE_URL` is also supported for PostgreSQL-style URLs:
+## Production Запуск
+
+Мінімальні environment variables:
+
+```bash
+ASPNETCORE_ENVIRONMENT=Production
+DATABASE_PROVIDER=PostgreSQL
+ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=hrreserve;Username=hrreserve;Password=change-me;Include Error Detail=false"
+Email__Enabled=false
+Email__Host=
+Email__Port=587
+Email__UserName=
+Email__Password=
+Email__FromEmail=no-reply@example.com
+Email__FromName="HR Reserve System"
+Email__RedirectAllTo=
+```
+
+`DATABASE_URL` також підтримується:
 
 ```bash
 DATABASE_PROVIDER=PostgreSQL
-DATABASE_URL=postgres://hrreserve:change-me@postgres:5432/hrreserve
+DATABASE_URL=postgres://hrreserve:change-me@localhost:5432/hrreserve
 ```
 
-Do not commit real passwords or SMTP credentials. Start from `.env.example` and create a local `.env` file for Docker Compose.
+У Production за замовчуванням увімкнені HSTS, HTTPS redirection і secure cookies. Якщо застосунок стоїть за reverse proxy, TLS має завершуватися на proxy, а forwarded headers/HTTPS policy треба налаштувати на рівні інфраструктури.
 
 ## Docker Compose
 
-1. Copy `.env.example` to `.env`.
-2. Change `POSTGRES_PASSWORD`.
-3. Start the stack:
+1. Скопіювати `.env.example` у `.env`.
+2. Заповнити `POSTGRES_PASSWORD`.
+3. Запустити:
 
 ```bash
-docker compose up --build
+docker compose build
+docker compose up
 ```
 
-The app listens on `http://localhost:8080` by default. Change `APP_PORT` in `.env` if the port is busy.
+Compose запускає web app і PostgreSQL. Застосунок сам виконує `Database.Migrate()` під час старту. Для реального production перед оновленням версії зробіть backup БД.
 
-The compose stack creates named volumes for PostgreSQL data, ASP.NET Core Data Protection keys, email outbox files, and uploaded resumes.
+## База Даних
 
-## Health Checks
+SQLite:
 
-The application exposes:
+- використовується для локального демо;
+- файл `hrreserve.db` не комітиться;
+- міграції лежать у `Migrations`.
 
-- `/health/live` - process liveness, does not require a database connection;
-- `/health/ready` - readiness, checks the configured database connection.
+PostgreSQL:
 
-Use `/health/live` for container liveness probes and `/health/ready` for readiness/load balancer checks.
-
-## Migrations And Seed Data
-
-On startup the application runs `Database.Migrate()` and then `SeedData.InitializeAsync(...)`.
-
-This keeps local and Docker startup simple, but production operators should still back up the database before deploying a new version with migrations.
-
-## Logging
-
-The app uses built-in console/debug logging and ASP.NET Core HTTP logging for method, path, status code, and duration. Sensitive request bodies and headers are not logged by this configuration.
-
-Useful production overrides:
-
-```bash
-Logging__LogLevel__Default=Information
-Logging__LogLevel__Microsoft.AspNetCore=Warning
-Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command=Warning
-```
+- вмикається через `DATABASE_PROVIDER=PostgreSQL`;
+- connection string передається через `ConnectionStrings__DefaultConnection` або `DATABASE_URL`;
+- PostgreSQL migrations знаходяться у `Migrations/Postgres`;
+- перед production запуском перевірте міграції на staging БД.
 
 ## Email
 
-Email is disabled by default. Configure SMTP only when real sending is needed:
+Fallback режим:
+
+```bash
+Email__Enabled=false
+```
+
+У цьому режимі повідомлення створюються в `EmailOutbox`.
+
+SMTP режим:
 
 ```bash
 Email__Enabled=true
 Email__Host=smtp.example.com
 Email__Port=587
-Email__UseSsl=true
 Email__UserName=mailer@example.com
 Email__Password=change-me
 Email__FromEmail=no-reply@example.com
 Email__FromName="HR Reserve System"
 ```
 
-For QA environments, `Email__RedirectAllTo=qa@example.com` sends all messages to one test mailbox.
+Для тестування:
+
+```bash
+Email__RedirectAllTo=qa@example.com
+```
+
+## Backup
+
+SQLite:
+
+```bash
+copy hrreserve.db backups\hrreserve-YYYYMMDD.db
+```
+
+PostgreSQL:
+
+```bash
+pg_dump -h localhost -U hrreserve -d hrreserve -F c -f backups/hrreserve-YYYYMMDD.dump
+```
+
+Docker Compose PostgreSQL:
+
+```bash
+docker compose exec postgres pg_dump -U hrreserve -d hrreserve -F c -f /tmp/hrreserve.dump
+docker compose cp postgres:/tmp/hrreserve.dump ./backups/hrreserve-YYYYMMDD.dump
+```
+
+## Health Checks
+
+```bash
+curl http://localhost:8080/health/live
+curl http://localhost:8080/health/ready
+```
+
+- `/health/live` перевіряє, що процес застосунку живий.
+- `/health/ready` перевіряє доступність налаштованої БД.
+
+## Секрети
+
+Не комітьте:
+
+- `.env`;
+- SMTP passwords;
+- Gmail app passwords;
+- токени;
+- приватні ключі;
+- реальні резюме;
+- `EmailOutbox`;
+- `DataProtectionKeys`.
