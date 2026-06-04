@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRReserveSystem.Migrations.Postgres
 {
     /// <inheritdoc />
-    public partial class InitialPostgres : Migration
+    public partial class InitialPostgresClean : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -64,7 +64,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     ResumeFilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ResumeSummary = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     ExperienceYears = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -83,7 +83,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     Login = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: false),
                     PasswordHash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     Role = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -99,16 +99,16 @@ namespace HRReserveSystem.Migrations.Postgres
                     Title = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
                     Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    SalaryMin = table.Column<string>(type: "TEXT", nullable: false),
-                    SalaryMax = table.Column<string>(type: "TEXT", nullable: false),
+                    SalaryMin = table.Column<decimal>(type: "numeric", nullable: false),
+                    SalaryMax = table.Column<decimal>(type: "numeric", nullable: false),
                     Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     IsArchived = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Vacancies", x => x.Id);
-                    table.CheckConstraint("CK_Vacancies_SalaryRange", "CAST(\"SalaryMax\" AS REAL) >= CAST(\"SalaryMin\" AS REAL)");
+                    table.CheckConstraint("CK_Vacancies_SalaryRange", "\"SalaryMax\" >= \"SalaryMin\"");
                     table.CheckConstraint("CK_Vacancies_Status", "\"Status\" IN ('Open','Paused','Closed')");
                 });
 
@@ -257,7 +257,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     CandidateId = table.Column<int>(type: "integer", nullable: false),
                     VacancyId = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    AppliedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    AppliedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     RecruiterComment = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
                 },
                 constraints: table =>
@@ -286,7 +286,7 @@ namespace HRReserveSystem.Migrations.Postgres
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ApplicationId = table.Column<int>(type: "integer", nullable: false),
                     RecruiterId = table.Column<int>(type: "integer", nullable: true),
-                    InterviewDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    InterviewDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     InterviewType = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     Result = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
@@ -319,7 +319,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     Comment = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Score = table.Column<int>(type: "integer", nullable: false),
                     Recommendation = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
                 },
                 constraints: table =>
                 {

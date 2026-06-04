@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HRReserveSystem.Migrations.Postgres
 {
     [DbContext(typeof(PostgresApplicationDbContext))]
-    [Migration("20260526204142_InitialPostgres")]
-    partial class InitialPostgres
+    [Migration("20260604171016_InitialPostgresClean")]
+    partial class InitialPostgresClean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,7 +34,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AppliedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CandidateId")
                         .HasColumnType("integer");
@@ -73,7 +73,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -128,7 +128,7 @@ namespace HRReserveSystem.Migrations.Postgres
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("InterviewDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("InterviewType")
                         .IsRequired()
@@ -170,7 +170,7 @@ namespace HRReserveSystem.Migrations.Postgres
                         .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("InterviewId")
                         .HasColumnType("integer");
@@ -207,7 +207,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -302,7 +302,7 @@ namespace HRReserveSystem.Migrations.Postgres
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -317,13 +317,11 @@ namespace HRReserveSystem.Migrations.Postgres
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("SalaryMax")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<decimal>("SalaryMax")
+                        .HasColumnType("numeric");
 
-                    b.Property<string>("SalaryMin")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<decimal>("SalaryMin")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -339,7 +337,7 @@ namespace HRReserveSystem.Migrations.Postgres
 
                     b.ToTable("Vacancies", t =>
                         {
-                            t.HasCheckConstraint("CK_Vacancies_SalaryRange", "CAST(\"SalaryMax\" AS REAL) >= CAST(\"SalaryMin\" AS REAL)");
+                            t.HasCheckConstraint("CK_Vacancies_SalaryRange", "\"SalaryMax\" >= \"SalaryMin\"");
 
                             t.HasCheckConstraint("CK_Vacancies_Status", "\"Status\" IN ('Open','Paused','Closed')");
                         });
