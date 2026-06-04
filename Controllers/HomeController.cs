@@ -40,6 +40,36 @@ public class HomeController : Controller
             .Select(assessment => (assessment.Communication + assessment.Teamwork + assessment.Responsibility + assessment.StressResistance + assessment.Leadership) / 5.0)
             .ToListAsync();
 
+        // Compute weekly deltas (this 7-day window vs previous 7-day window)
+        var now = DateTime.UtcNow;
+        var thisWindowStart = now.AddDays(-7);
+        var prevWindowStart = now.AddDays(-14);
+        var prevWindowEnd = thisWindowStart;
+
+        var thisWeekCandidates = await _context.Candidates.CountAsync(c => !c.IsDeleted && c.CreatedAt >= thisWindowStart);
+        var prevWeekCandidates = await _context.Candidates.CountAsync(c => !c.IsDeleted && c.CreatedAt >= prevWindowStart && c.CreatedAt < prevWindowEnd);
+        var candidateDelta = thisWeekCandidates - prevWeekCandidates;
+
+        var thisWeekVacancies = await _context.Vacancies.CountAsync(v => !v.IsArchived && v.CreatedAt >= thisWindowStart);
+        var prevWeekVacancies = await _context.Vacancies.CountAsync(v => !v.IsArchived && v.CreatedAt >= prevWindowStart && v.CreatedAt < prevWindowEnd);
+        var vacancyDelta = thisWeekVacancies - prevWeekVacancies;
+
+        var thisWeekApplications = await _context.Applications.CountAsync(a => a.AppliedAt >= thisWindowStart);
+        var prevWeekApplications = await _context.Applications.CountAsync(a => a.AppliedAt >= prevWindowStart && a.AppliedAt < prevWindowEnd);
+        var applicationDelta = thisWeekApplications - prevWeekApplications;
+
+        var thisWeekInterviews = await _context.Interviews.CountAsync(i => i.InterviewDate >= thisWindowStart && i.InterviewDate < now);
+        var prevWeekInterviews = await _context.Interviews.CountAsync(i => i.InterviewDate >= prevWindowStart && i.InterviewDate < prevWindowEnd);
+        var interviewDelta = thisWeekInterviews - prevWeekInterviews;
+
+        var thisWeekAccepted = await _context.Applications.CountAsync(a => a.Status == "Hired" && a.AppliedAt >= thisWindowStart);
+        var prevWeekAccepted = await _context.Applications.CountAsync(a => a.Status == "Hired" && a.AppliedAt >= prevWindowStart && a.AppliedAt < prevWindowEnd);
+        var acceptedDelta = thisWeekAccepted - prevWeekAccepted;
+
+        var thisWeekRejected = await _context.Applications.CountAsync(a => a.Status == "Rejected" && a.AppliedAt >= thisWindowStart);
+        var prevWeekRejected = await _context.Applications.CountAsync(a => a.Status == "Rejected" && a.AppliedAt >= prevWindowStart && a.AppliedAt < prevWindowEnd);
+        var rejectedDelta = thisWeekRejected - prevWeekRejected;
+
         var dashboard = new DashboardViewModel
         {
             CandidateCount = await _context.Candidates.CountAsync(candidate => !candidate.IsDeleted),
@@ -84,6 +114,14 @@ public class HomeController : Controller
             ApplicationStatusCounts = applicationStatusCounts,
             VacancyStatusCounts = vacancyStatusCounts
         };
+
+        // attach deltas
+        dashboard.CandidateDelta = candidateDelta;
+        dashboard.VacancyDelta = vacancyDelta;
+        dashboard.ApplicationDelta = applicationDelta;
+        dashboard.InterviewDelta = interviewDelta;
+        dashboard.AcceptedDelta = acceptedDelta;
+        dashboard.RejectedDelta = rejectedDelta;
 
         return View(dashboard);
     }

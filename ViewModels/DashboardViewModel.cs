@@ -18,6 +18,19 @@ public class DashboardViewModel
 
     public int RejectedCandidateCount { get; set; }
 
+    // Delta values for dashboard (e.g. change compared to previous 7-day window)
+    public int CandidateDelta { get; set; }
+
+    public int VacancyDelta { get; set; }
+
+    public int ApplicationDelta { get; set; }
+
+    public int InterviewDelta { get; set; }
+
+    public int AcceptedDelta { get; set; }
+
+    public int RejectedDelta { get; set; }
+
     public double AverageSoftSkillScore { get; set; }
 
     public IReadOnlyList<Candidate> RecentCandidates { get; set; } = [];

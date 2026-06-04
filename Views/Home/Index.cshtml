@@ -66,7 +66,8 @@
                     <span class="text-muted small text-uppercase">Кандидати</span>
                 </div>
                 <div class="display-6 fw-semibold">@Model.CandidateCount</div>
-                <div class="metric-delta text-success">↗ +12 цього тижня</div>
+                @{ var candSign = Model.CandidateDelta >= 0 ? "↗" : "↘"; var candClass = Model.CandidateDelta >= 0 ? "text-success" : "text-danger"; var candAbs = Math.Abs(Model.CandidateDelta); }
+                <div class="metric-delta @candClass">@candSign @((candAbs == 0) ? "0" : (Model.CandidateDelta > 0 ? "+" + candAbs : "-" + candAbs)) цього тижня</div>
             </div>
         </a>
         <a class="card dashboard-card dashboard-card-link" href="@vacanciesUrl">
@@ -76,7 +77,8 @@
                     <span class="text-muted small text-uppercase">Вакансії</span>
                 </div>
                 <div class="display-6 fw-semibold">@Model.VacancyCount</div>
-                <div class="metric-delta text-primary">↗ +3 цього тижня</div>
+                @{ var vacSign = Model.VacancyDelta >= 0 ? "↗" : "↘"; var vacClass = Model.VacancyDelta >= 0 ? "text-success" : "text-danger"; var vacAbs = Math.Abs(Model.VacancyDelta); }
+                <div class="metric-delta @vacClass">@vacSign @((vacAbs == 0) ? "0" : (Model.VacancyDelta > 0 ? "+" + vacAbs : "-" + vacAbs)) цього тижня</div>
             </div>
         </a>
         <a class="card dashboard-card dashboard-card-link" href="@applicationsUrl">
@@ -86,7 +88,8 @@
                     <span class="text-muted small text-uppercase">Заявки</span>
                 </div>
                 <div class="display-6 fw-semibold">@Model.ApplicationCount</div>
-                <div class="metric-delta text-success">↗ +23 цього тижня</div>
+                @{ var appSign = Model.ApplicationDelta >= 0 ? "↗" : "↘"; var appClass = Model.ApplicationDelta >= 0 ? "text-success" : "text-danger"; var appAbs = Math.Abs(Model.ApplicationDelta); }
+                <div class="metric-delta @appClass">@appSign @((appAbs == 0) ? "0" : (Model.ApplicationDelta > 0 ? "+" + appAbs : "-" + appAbs)) цього тижня</div>
             </div>
         </a>
     }
@@ -97,7 +100,8 @@
                 <span class="text-muted small text-uppercase">Співбесіди</span>
             </div>
             <div class="display-6 fw-semibold">@Model.InterviewCount</div>
-            <div class="metric-delta text-success">↗ +5 цього тижня</div>
+            @{ var intSign = Model.InterviewDelta >= 0 ? "↗" : "↘"; var intClass = Model.InterviewDelta >= 0 ? "text-success" : "text-danger"; var intAbs = Math.Abs(Model.InterviewDelta); }
+            <div class="metric-delta @intClass">@intSign @((intAbs == 0) ? "0" : (Model.InterviewDelta > 0 ? "+" + intAbs : "-" + intAbs)) цього тижня</div>
         </div>
     </a>
     @if (canOpenInterviewPages)
@@ -135,7 +139,8 @@
                     <span class="text-muted small text-uppercase">Прийняті</span>
                 </div>
                 <div class="display-6 fw-semibold">@Model.AcceptedCandidateCount</div>
-                <div class="metric-delta text-success">↗ +3 цього тижня</div>
+                @{ var accSign = Model.AcceptedDelta >= 0 ? "↗" : "↘"; var accClass = Model.AcceptedDelta >= 0 ? "text-success" : "text-danger"; var accAbs = Math.Abs(Model.AcceptedDelta); }
+                <div class="metric-delta @accClass">@accSign @((accAbs == 0) ? "0" : (Model.AcceptedDelta > 0 ? "+" + accAbs : "-" + accAbs)) цього тижня</div>
             </div>
         </a>
         <a class="card dashboard-card dashboard-card-link" href="@rejectedUrl">
@@ -145,7 +150,8 @@
                     <span class="text-muted small text-uppercase">Відхилені</span>
                 </div>
                 <div class="display-6 fw-semibold">@Model.RejectedCandidateCount</div>
-                <div class="metric-delta text-primary">↗ +4 цього тижня</div>
+                @{ var rejSign = Model.RejectedDelta >= 0 ? "↗" : "↘"; var rejClass = Model.RejectedDelta >= 0 ? "text-success" : "text-danger"; var rejAbs = Math.Abs(Model.RejectedDelta); }
+                <div class="metric-delta @rejClass">@rejSign @((rejAbs == 0) ? "0" : (Model.RejectedDelta > 0 ? "+" + rejAbs : "-" + rejAbs)) цього тижня</div>
             </div>
         </a>
     }
