@@ -173,3 +173,50 @@ GitHub Actions workflow `.github/workflows/ci.yml` виконує:
 - Файли резюме зберігаються локально, хмарне сховище не підключене.
 - PostgreSQL підтримується як production-провайдер через окремий `PostgresApplicationDbContext` і PostgreSQL migrations у `Migrations/Postgres`; перед реальним production запуском треба перевірити міграції на staging БД і зробити backup.
 - SQLite зберігає salary decimal як `TEXT`, це локальний компроміс для демо.
+
+## Database provider notes and how to avoid schema drift
+
+- Default for local development: `SQLite` (see `appsettings.json`). SQLite stores `decimal` values as `TEXT` in this demo to avoid precision differences locally.
+- Production / Docker: `PostgreSQL` (compose sets `DATABASE_PROVIDER=PostgreSQL`). PostgreSQL should use `numeric` for `decimal` values.
+
+Problem that may occur:
+- If you create or apply migrations targeted at SQLite, columns like `Vacancies.SalaryMin` / `SalaryMax` may end up with `type: "TEXT"` in migrations/snapshots. Applying those migrations to PostgreSQL will create text columns and later EF Core will throw `InvalidCastException` when materializing `decimal` properties.
+
+How to avoid this (recommended workflow):
+1. Decide the provider for the environment you are targeting (local vs staging vs production).
+2. When working with PostgreSQL, use the `PostgresApplicationDbContext` and keep Postgres migrations in `Migrations/Postgres/` only.
+  - Create Postgres migrations with the explicit context and output dir, for example:
+
+```powershell
+dotnet ef migrations add AddExample --context PostgresApplicationDbContext --output-dir Migrations/Postgres
+```
+
+3. Inspect generated migrations for column types. For Postgres numeric/decimal columns you should see `type: "numeric(18,2)"` (or `numeric`). If you see `type: "TEXT"`, update the migration to use the correct numeric type before applying.
+
+4. Always test migrations against a staging database and create a backup before applying to production:
+
+```bash
+pg_dump -h <host> -U <user> -d <db> -F c -f ./backups/hrreserve-before-migration.dump
+```
+
+5. If you already have a Postgres DB with `SalaryMin/SalaryMax` as text, prefer running a safe conversion script (create temporary numeric columns, convert values, validate, then rename) rather than `ALTER COLUMN ... USING` directly. See `DEPLOYMENT.md` and the `docker-compose.yml` for the production runbook.
+
+6. After applying manual SQL changes to the DB, create a small EF migration (or update the Postgres snapshot) so the EF Core model snapshot matches the actual DB schema. This keeps future scaffolds and migrations correct.
+
+Quick diagnostics (run on the Postgres host):
+
+```sql
+SELECT column_name, data_type, udt_name
+FROM information_schema.columns
+WHERE table_name = 'vacancies' AND column_name IN ('salarymin','salarymax');
+
+SELECT "Id","Title","SalaryMin","SalaryMax"
+FROM "Vacancies"
+LIMIT 20;
+```
+
+If you'd like, I can prepare:
+- A safe SQL script to convert `SalaryMin`/`SalaryMax` to `numeric(18,2)` (requires backup and review); or
+- An EF Core migration and the required snapshot updates so changes are tracked by EF.
+
+Keeping a single authoritative migrations folder per provider (`Migrations` for SQLite demo, `Migrations/Postgres` for Postgres) and following the steps above prevents these schema drift issues.

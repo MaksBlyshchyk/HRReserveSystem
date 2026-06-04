@@ -85,6 +85,15 @@ public class ApplicationDbContext(DbContextOptions options) : IdentityDbContext<
                 .HasColumnType("TEXT");
         }
 
+        // NOTE:
+        // For local demo we store decimals as TEXT in SQLite to avoid precision/platform differences.
+        // When running with PostgreSQL (production/docker), the Postgres migrations in
+        // `Migrations/Postgres` should declare these columns as numeric (e.g. numeric(18,2)).
+        // If you change provider or adjust model types, ensure Postgres migrations and
+        // `PostgresApplicationDbContextModelSnapshot` are updated so EF Core model snapshot
+        // matches the real database schema. Failing to keep migrations/snapshot in sync with
+        // the live DB can cause InvalidCastException when EF materializes entities.
+
         modelBuilder.Entity<Interview>()
             .HasOne(interview => interview.Recruiter)
             .WithMany(recruiter => recruiter.Interviews)
