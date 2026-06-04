@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: hrreservesystem
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: Dockerfile
+    numInstances: 1
+    healthCheckPath: /health/ready
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_PROVIDER
+        value: PostgreSQL
+      # DATABASE_URL will be set automatically if you create a PostgreSQL database on Render
+      # Otherwise, set ConnectionStrings__DefaultConnection directly:
+      # - key: ConnectionStrings__DefaultConnection
+      #   value: "Host=your-postgres-host;Port=5432;Database=hrreserve;Username=hrreserve;Password=your-password;Include Error Detail=false"
+    
+  # Optional: PostgreSQL database (uncomment to use Render's managed Postgres)
+  # - type: pserv
+  #   name: hrreservesystem-db
+  #   runtime: postgres
+  #   plan: free
+  #   region: ohio
+  #   version: 16
+  #   initialDatabaseName: hrreserve
+  #   initialDatabaseUser: hrreserve
+  #   ipAllowList: []
+  #   disks:
+  #     - name: postgres-data
+  #       sizeGB: 1
